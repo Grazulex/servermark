@@ -100,6 +100,11 @@ pub fn run() {
             commands::get_php_versions,
             commands::switch_php_version,
             commands::install_php_version,
+            commands::check_php_ppa,
+            commands::add_php_ppa,
+            commands::get_php_extensions,
+            commands::install_php_with_extensions,
+            commands::uninstall_php_version,
             // Docker/Podman commands
             commands::detect_container_runtime,
             commands::list_containers,

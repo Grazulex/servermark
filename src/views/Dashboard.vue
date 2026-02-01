@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useServicesStore, usePhpStore, useSitesStore } from '@/stores'
 import ServiceCard from '@/components/ServiceCard.vue'
 
 const servicesStore = useServicesStore()
 const phpStore = usePhpStore()
 const sitesStore = useSitesStore()
+
+onMounted(async () => {
+  // Load PHP versions if not already loaded
+  if (phpStore.versions.length === 0) {
+    await phpStore.fetchVersions()
+  }
+})
 </script>
 
 <template>

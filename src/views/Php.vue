@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { usePhpStore } from '@/stores/php'
 import { useConfigStore } from '@/stores/config'
+import PhpInstallModal from '@/components/PhpInstallModal.vue'
 
 const phpStore = usePhpStore()
 const configStore = useConfigStore()
 
+const showInstallModal = ref(false)
+const selectedVersionToInstall = ref('')
+
 onMounted(async () => {
-  await phpStore.fetchVersions()
+  await Promise.all([
+    phpStore.fetchVersions(),
+    phpStore.checkPpa(),
+  ])
 })
 
 async function handleSwitch(version: string) {
@@ -18,11 +25,24 @@ async function handleSwitch(version: string) {
   }
 }
 
-async function handleInstall(version: string) {
+function openInstallModal(version: string) {
+  selectedVersionToInstall.value = version
+  showInstallModal.value = true
+}
+
+function closeInstallModal() {
+  showInstallModal.value = false
+  selectedVersionToInstall.value = ''
+}
+
+async function handleUninstall(version: string) {
+  if (!confirm(`Are you sure you want to uninstall PHP ${version}? This will remove all related packages.`)) {
+    return
+  }
   try {
-    await phpStore.installVersion(version, configStore.config.packageManager)
+    await phpStore.uninstallVersion(version, configStore.config.packageManager)
   } catch (e) {
-    console.error('Failed to install:', e)
+    console.error('Failed to uninstall:', e)
   }
 }
 </script>
@@ -62,6 +82,35 @@ async function handleInstall(version: string) {
       class="error-banner"
     >
       {{ phpStore.error }}
+    </div>
+
+    <!-- PPA Warning Banner -->
+    <div
+      v-if="phpStore.ppaStatus && !phpStore.ppaStatus.installed && configStore.config.packageManager === 'apt'"
+      class="ppa-banner"
+    >
+      <div class="ppa-icon">!</div>
+      <div class="ppa-content">
+        <strong>PPA ondrej/php not detected</strong>
+        <p v-if="!phpStore.addingPpa">
+          For the latest PHP versions on Ubuntu/Debian, add the ondrej/php PPA.
+        </p>
+        <!-- PPA Progress -->
+        <div
+          v-if="phpStore.addingPpa"
+          class="ppa-loading"
+        >
+          <div class="ppa-spinner"></div>
+          <span>Adding PPA... Please wait</span>
+        </div>
+      </div>
+      <button
+        v-if="!phpStore.addingPpa"
+        class="btn btn-warning"
+        @click="phpStore.addPpa()"
+      >
+        Add PPA
+      </button>
     </div>
 
     <div class="php-grid">
@@ -105,27 +154,37 @@ async function handleInstall(version: string) {
           <template v-if="!php.installed">
             <button
               class="btn btn-primary"
-              :disabled="phpStore.loading"
-              @click="handleInstall(php.version)"
+              :disabled="phpStore.loading || phpStore.installing"
+              @click="openInstallModal(php.version)"
             >
-              {{ phpStore.loading ? 'Installing...' : 'Install' }}
+              {{ phpStore.installing ? 'Installing...' : 'Install' }}
             </button>
           </template>
           <template v-else>
+            <div class="actions-row">
+              <button
+                v-if="!php.active"
+                class="btn btn-success"
+                :disabled="phpStore.loading || phpStore.uninstalling"
+                @click="handleSwitch(php.version)"
+              >
+                {{ phpStore.loading ? 'Switching...' : 'Set Active' }}
+              </button>
+              <span
+                v-else
+                class="active-label"
+              >
+                Currently Active
+              </span>
+            </div>
             <button
               v-if="!php.active"
-              class="btn btn-success"
-              :disabled="phpStore.loading"
-              @click="handleSwitch(php.version)"
+              class="btn btn-danger btn-sm"
+              :disabled="phpStore.uninstalling"
+              @click="handleUninstall(php.version)"
             >
-              {{ phpStore.loading ? 'Switching...' : 'Set Active' }}
+              {{ phpStore.uninstalling ? 'Removing...' : 'Uninstall' }}
             </button>
-            <span
-              v-else
-              class="active-label"
-            >
-              Currently Active
-            </span>
           </template>
         </div>
       </div>
@@ -139,12 +198,37 @@ async function handleInstall(version: string) {
       <h3>No PHP versions found</h3>
       <p>Click "Refresh" to scan for installed PHP versions.</p>
     </div>
+
+    <!-- Install Modal -->
+    <PhpInstallModal
+      :version="selectedVersionToInstall"
+      :show="showInstallModal"
+      @close="closeInstallModal"
+      @installed="phpStore.fetchVersions()"
+    />
+
+    <!-- Loading Overlay for install/uninstall -->
+    <div
+      v-if="phpStore.installing || phpStore.uninstalling"
+      class="loading-overlay"
+    >
+      <div class="loading-modal">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">
+          {{ phpStore.installing ? 'Installing PHP...' : 'Uninstalling PHP...' }}
+        </div>
+        <div class="loading-subtext">
+          This may take a few minutes. Please wait...
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .php-page {
   max-width: 1200px;
+  position: relative;
 }
 
 .page-header {
@@ -176,6 +260,93 @@ async function handleInstall(version: string) {
   border-radius: 8px;
   margin-bottom: 24px;
   font-size: 14px;
+}
+
+.ppa-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.ppa-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.ppa-content {
+  flex: 1;
+}
+
+.ppa-content strong {
+  color: #f59e0b;
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.ppa-content p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: 0;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: #000;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-warning:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ppa-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.ppa-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .php-grid {
@@ -252,6 +423,12 @@ async function handleInstall(version: string) {
 
 .php-actions {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actions-row {
+  display: flex;
   gap: 8px;
 }
 
@@ -287,6 +464,20 @@ async function handleInstall(version: string) {
 
 .btn-success:hover:not(:disabled) {
   background: var(--color-success-hover);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .btn-secondary {
@@ -339,5 +530,52 @@ async function handleInstall(version: string) {
 .empty-state p {
   color: var(--color-text-muted);
   margin: 0;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.loading-modal {
+  background: var(--color-bg-primary);
+  border-radius: 16px;
+  padding: 48px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--color-border);
+}
+
+.loading-spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid var(--color-bg-tertiary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.loading-subtext {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 </style>
