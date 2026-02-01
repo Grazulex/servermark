@@ -15,6 +15,16 @@ interface WebServerStatus {
   active: string | null
 }
 
+
+interface NativeService {
+  name: string
+  display_name: string
+  installed: boolean
+  running: boolean
+  version: string | null
+  port: number | null
+}
+
 const phpStore = usePhpStore()
 const sitesStore = useSitesStore()
 const dockerStore = useDockerStore()
@@ -25,12 +35,28 @@ const webServerLoading = ref(false)
 const webServerInstalling = ref(false)
 const webServerSwitching = ref(false)
 
+
+const nativeServices = ref<NativeService[]>([])
+const nativeServicesLoading = ref(false)
+const serviceActionLoading = ref<string | null>(null)
+
+// Logs modal
+const showLogsModal = ref(false)
+const logsService = ref('')
+const logsContent = ref('')
+const logsLoading = ref(false)
+
 const hasWebServer = computed(() => {
   return webServer.value?.caddy_installed || webServer.value?.nginx_installed
 })
 
 const activeWebServer = computed(() => {
   return webServer.value?.active || null
+})
+
+
+const installedNativeServices = computed(() => {
+  return nativeServices.value.filter(s => s.installed)
 })
 
 async function detectWebServer() {
@@ -75,6 +101,51 @@ async function switchWebServer(server: 'caddy' | 'nginx') {
   }
 }
 
+
+async function detectNativeServices() {
+  nativeServicesLoading.value = true
+  try {
+    const result = await invoke<{ services: NativeService[] }>('detect_native_services')
+    nativeServices.value = result.services
+  } catch (e) {
+    console.error('Failed to detect native services:', e)
+  } finally {
+    nativeServicesLoading.value = false
+  }
+}
+
+async function controlService(service: string, action: 'start' | 'stop' | 'restart') {
+  serviceActionLoading.value = service
+  try {
+    await invoke('control_native_service', { service, action })
+    await detectNativeServices()
+  } catch (e: any) {
+    console.error(`Failed to ${action} ${service}:`, e)
+    alert(`Failed to ${action} ${service}: ${e}`)
+  } finally {
+    serviceActionLoading.value = null
+  }
+}
+
+async function openLogs(service: string) {
+  logsService.value = service
+  logsContent.value = ''
+  showLogsModal.value = true
+  logsLoading.value = true
+  try {
+    logsContent.value = await invoke<string>('get_service_logs', { service, lines: 100 })
+  } catch (e) {
+    logsContent.value = `Failed to load logs: ${e}`
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+function closeLogsModal() {
+  showLogsModal.value = false
+  logsContent.value = ''
+}
+
 onMounted(async () => {
   // Detect system info first (needed for package manager)
   if (!systemStore.info) {
@@ -93,6 +164,8 @@ onMounted(async () => {
   }
   // Detect web server
   await detectWebServer()
+  // Detect native services
+  await detectNativeServices()
 })
 </script>
 
@@ -185,6 +258,22 @@ onMounted(async () => {
           </button>
         </div>
 
+        <!-- Web Server Actions -->
+        <div v-if="activeWebServer" class="webserver-actions">
+          <button
+            class="btn btn-secondary btn-sm"
+            @click="controlService(activeWebServer, 'restart')"
+          >
+            Restart {{ activeWebServer === 'caddy' ? 'Caddy' : 'Nginx' }}
+          </button>
+          <button
+            class="btn btn-secondary btn-sm"
+            @click="openLogs(activeWebServer)"
+          >
+            View Logs
+          </button>
+        </div>
+
         <div v-if="!webServer?.caddy_installed || !webServer?.nginx_installed" class="install-missing">
           <button
             v-if="!webServer?.caddy_installed"
@@ -202,6 +291,81 @@ onMounted(async () => {
           >
             + Install Nginx
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DNS Info -->
+    <section class="section">
+      <div class="section-header">
+        <h2>DNS Resolution</h2>
+      </div>
+      <div class="dns-card info">
+        <div class="dns-info-text">
+          <span class="info-icon">ℹ</span>
+          <span>Sites are resolved via <code>/etc/hosts</code> entries, managed automatically by ServerMark.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Native Services -->
+    <section v-if="installedNativeServices.length > 0" class="section">
+      <div class="section-header">
+        <h2>Native Services</h2>
+      </div>
+
+      <div class="native-services-grid">
+        <div
+          v-for="service in installedNativeServices"
+          :key="service.name"
+          class="native-service-card"
+          :class="{ running: service.running }"
+        >
+          <div class="service-header">
+            <div class="service-icon">{{ service.display_name.charAt(0) }}</div>
+            <div class="service-info">
+              <div class="service-name">{{ service.display_name }}</div>
+              <div class="service-version">{{ service.version || 'Unknown version' }}</div>
+            </div>
+            <div class="service-status" :class="{ running: service.running }">
+              <span class="status-dot"></span>
+              {{ service.running ? 'Running' : 'Stopped' }}
+            </div>
+          </div>
+          <div class="service-meta">
+            <span v-if="service.port" class="service-port">Port: {{ service.port }}</span>
+          </div>
+          <div class="service-actions">
+            <button
+              v-if="!service.running"
+              class="btn btn-success btn-sm"
+              :disabled="serviceActionLoading === service.name"
+              @click="controlService(service.name, 'start')"
+            >
+              Start
+            </button>
+            <button
+              v-else
+              class="btn btn-warning btn-sm"
+              :disabled="serviceActionLoading === service.name"
+              @click="controlService(service.name, 'stop')"
+            >
+              Stop
+            </button>
+            <button
+              class="btn btn-secondary btn-sm"
+              :disabled="serviceActionLoading === service.name"
+              @click="controlService(service.name, 'restart')"
+            >
+              Restart
+            </button>
+            <button
+              class="btn btn-secondary btn-sm"
+              @click="openLogs(service.name)"
+            >
+              Logs
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -248,24 +412,44 @@ onMounted(async () => {
     <section class="section">
       <h2>Quick Actions</h2>
       <div class="actions-grid">
-        <button class="action-btn">
+        <router-link to="/sites" class="action-btn">
           <span class="action-icon">+</span>
           <span class="action-label">Add Site</span>
-        </button>
-        <button class="action-btn">
+        </router-link>
+        <router-link to="/php" class="action-btn">
           <span class="action-icon">P</span>
           <span class="action-label">Install PHP</span>
-        </button>
-        <button class="action-btn">
+        </router-link>
+        <router-link to="/settings" class="action-btn">
           <span class="action-icon">C</span>
-          <span class="action-label">Open Config</span>
-        </button>
-        <button class="action-btn">
-          <span class="action-icon">T</span>
-          <span class="action-label">Open Terminal</span>
-        </button>
+          <span class="action-label">Settings</span>
+        </router-link>
+        <router-link to="/containers" class="action-btn">
+          <span class="action-icon">D</span>
+          <span class="action-label">Containers</span>
+        </router-link>
       </div>
     </section>
+
+    <!-- Logs Modal -->
+    <Teleport to="body">
+      <div v-if="showLogsModal" class="modal-overlay" @click.self="closeLogsModal">
+        <div class="modal logs-modal">
+          <div class="modal-header">
+            <h3>Logs: {{ logsService }}</h3>
+            <button class="close-btn" @click="closeLogsModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="logsLoading" class="logs-loading">Loading logs...</div>
+            <pre v-else class="logs-content">{{ logsContent }}</pre>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="openLogs(logsService)">Refresh</button>
+            <button class="btn btn-primary" @click="closeLogsModal">Close</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -642,6 +826,15 @@ onMounted(async () => {
   font-style: italic;
 }
 
+.webserver-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
 .install-missing {
   display: flex;
   gap: 8px;
@@ -670,5 +863,364 @@ onMounted(async () => {
 .install-btn-small:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* DNS Section */
+.dns-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dns-card.loading {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.dns-card.not-installed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dns-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-warning);
+}
+
+.install-btn.dns {
+  align-self: center;
+}
+
+.dns-card.installed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dns-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dns-status-row:last-of-type {
+  border-bottom: none;
+}
+
+.dns-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.dns-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.dns-status.running {
+  color: var(--color-success);
+}
+
+.dns-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.dns-status.running .status-dot {
+  background: var(--color-success);
+}
+
+.dns-card.info {
+  padding: 16px 20px;
+}
+
+.dns-info-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.dns-info-text .info-icon {
+  font-size: 18px;
+}
+
+.dns-info-text code {
+  background: var(--color-bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* Native Services */
+.native-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.native-service-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.native-service-card.running {
+  border-left: 3px solid var(--color-success);
+}
+
+.service-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.service-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-bg-tertiary);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.service-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.service-version {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.service-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.service-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.service-status.running {
+  color: var(--color-success);
+}
+
+.service-status.running .status-dot {
+  background: var(--color-success);
+}
+
+.service-meta {
+  margin-bottom: 12px;
+}
+
+.service-port {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  background: var(--color-bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.service-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-success {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-secondary {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Logs Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.logs-modal {
+  max-width: 900px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+  border: none;
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.logs-loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 40px;
+}
+
+.logs-content {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
 }
 </style>

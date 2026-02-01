@@ -139,6 +139,19 @@ pub fn run() {
             commands::sync_webserver_configs,
             commands::switch_active_webserver,
             commands::get_active_webserver,
+            // DNS commands
+            commands::detect_dns,
+            commands::install_dns,
+            // Native services commands
+            commands::detect_native_services,
+            commands::control_native_service,
+            // Terminal & Logs
+            commands::open_terminal,
+            commands::get_service_logs,
+            // Database management
+            commands::list_databases,
+            commands::create_database,
+            commands::drop_database,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

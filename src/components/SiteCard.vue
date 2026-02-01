@@ -8,6 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   open: []
+  terminal: []
   settings: []
   secure: []
   unsecure: []
@@ -115,6 +116,13 @@ const hasLaravelUpdate = computed(() => {
         @click="emit('open')"
       >
         Open
+      </button>
+      <button
+        class="btn btn-secondary"
+        @click="emit('terminal')"
+        title="Open terminal in project folder"
+      >
+        Terminal
       </button>
       <button
         v-if="!site.secured"

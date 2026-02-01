@@ -10,6 +10,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
   { path: '/sites', label: 'Sites', icon: 'sites' },
   { path: '/containers', label: 'Containers', icon: 'containers' },
+  { path: '/databases', label: 'Databases', icon: 'database' },
   { path: '/php', label: 'PHP', icon: 'php' },
   { path: '/settings', label: 'Settings', icon: 'settings' },
 ]

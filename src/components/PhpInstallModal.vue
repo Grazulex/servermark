@@ -26,8 +26,9 @@ const groupedExtensions = computed(() => {
   }
 
   for (const ext of phpStore.extensions) {
-    if (groups[ext.category]) {
-      groups[ext.category].push(ext)
+    const category = ext.category
+    if (category && category in groups) {
+      groups[category]!.push(ext)
     }
   }
 

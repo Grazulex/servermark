@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import type { Site } from '@/types'
 
+export type { Site }
+
 export interface FrameworkTemplate {
   id: string
   name: string

@@ -155,10 +155,11 @@ export const useDockerStore = defineStore('docker', () => {
   const templatesByCategory = computed(() => {
     const grouped: Record<string, ServiceTemplate[]> = {}
     for (const template of serviceTemplates) {
-      if (!grouped[template.category]) {
-        grouped[template.category] = []
+      const category = template.category
+      if (!grouped[category]) {
+        grouped[category] = []
       }
-      grouped[template.category].push(template)
+      grouped[category]!.push(template)
     }
     return grouped
   })

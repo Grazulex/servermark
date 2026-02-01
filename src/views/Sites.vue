@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import { useSitesStore } from '@/stores/sites'
 import { usePhpStore } from '@/stores/php'
 import { open } from '@tauri-apps/plugin-dialog'
 import { open as openUrl } from '@tauri-apps/plugin-shell'
 import SiteCard from '@/components/SiteCard.vue'
-import type { FrameworkTemplate } from '@/stores/sites'
+import type { FrameworkTemplate, Site } from '@/stores/sites'
 
 const sitesStore = useSitesStore()
 const phpStore = usePhpStore()
@@ -13,6 +14,12 @@ const phpStore = usePhpStore()
 // Modal state
 const showAddModal = ref(false)
 const addMode = ref<'create' | 'import' | 'clone'>('create')
+
+// Settings modal state
+const showSettingsModal = ref(false)
+const editingSite = ref<Site | null>(null)
+const editPhpVersion = ref('')
+const savingSettings = ref(false)
 
 // Form state
 const projectName = ref('')
@@ -87,12 +94,15 @@ async function browseFolder() {
 }
 
 async function browseProjectPath() {
-  const selected = await open({
+  const options: { directory: true; multiple: false; title: string; defaultPath?: string } = {
     directory: true,
     multiple: false,
     title: 'Select Location for New Project',
-    defaultPath: projectPath.value || undefined,
-  })
+  }
+  if (projectPath.value) {
+    options.defaultPath = projectPath.value
+  }
+  const selected = await open(options)
   if (selected && typeof selected === 'string') {
     projectPath.value = selected
   }
@@ -132,6 +142,40 @@ async function openSite(domain: string, secured: boolean) {
   const url = `http${secured ? 's' : ''}://${domain}`
   await openUrl(url)
 }
+
+async function openTerminal(path: string) {
+  try {
+    await invoke('open_terminal', { path })
+  } catch (e) {
+    console.error('Failed to open terminal:', e)
+  }
+}
+
+function openSettings(site: Site) {
+  editingSite.value = site
+  editPhpVersion.value = site.php_version
+  showSettingsModal.value = true
+}
+
+function closeSettingsModal() {
+  showSettingsModal.value = false
+  editingSite.value = null
+}
+
+async function saveSettings() {
+  if (!editingSite.value) return
+
+  savingSettings.value = true
+  try {
+    await sitesStore.updateSitePhp(editingSite.value.id, editPhpVersion.value)
+    closeSettingsModal()
+  } catch (e) {
+    console.error('Failed to save settings:', e)
+    alert(`Failed to save settings: ${e}`)
+  } finally {
+    savingSettings.value = false
+  }
+}
 </script>
 
 <template>
@@ -168,9 +212,10 @@ async function openSite(domain: string, secured: boolean) {
         :key="site.id"
         :site="site"
         @open="openSite(site.domain, site.secured)"
+        @terminal="openTerminal(site.path)"
         @secure="sitesStore.secureSite(site.id)"
         @unsecure="sitesStore.unsecureSite(site.id)"
-        @settings="() => {}"
+        @settings="openSettings(site)"
         @upgrade-laravel="() => {}"
         @remove="sitesStore.removeSite(site.id)"
       />
@@ -416,6 +461,65 @@ async function openSite(domain: string, secured: boolean) {
               @click="handleClone"
             >
               {{ sitesStore.loading ? 'Cloning...' : 'Clone & Setup' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Site Settings Modal -->
+    <Teleport to="body">
+      <div v-if="showSettingsModal" class="modal-overlay" @click.self="closeSettingsModal">
+        <div class="modal settings-modal">
+          <div class="modal-header">
+            <h2>Site Settings</h2>
+            <button class="close-btn" @click="closeSettingsModal">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="settings-info">
+              <div class="info-row">
+                <span class="info-label">Site</span>
+                <span class="info-value">{{ editingSite?.name }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Domain</span>
+                <span class="info-value">{{ editingSite?.domain }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Path</span>
+                <span class="info-value path">{{ editingSite?.path }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Type</span>
+                <span class="info-value capitalize">{{ editingSite?.site_type }}</span>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-field">
+                <label>PHP Version</label>
+                <select v-model="editPhpVersion">
+                  <option
+                    v-for="php in phpStore.installedVersions"
+                    :key="php.version"
+                    :value="php.version"
+                  >
+                    PHP {{ php.version }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeSettingsModal">Cancel</button>
+            <button
+              class="btn btn-primary"
+              :disabled="savingSettings"
+              @click="saveSettings"
+            >
+              {{ savingSettings ? 'Saving...' : 'Save Settings' }}
             </button>
           </div>
         </div>
@@ -796,5 +900,51 @@ async function openSite(domain: string, secured: boolean) {
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
+}
+
+/* Settings Modal */
+.settings-modal {
+  max-width: 500px;
+}
+
+.settings-info {
+  background: var(--color-bg-tertiary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.settings-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-info .info-row:last-child {
+  border-bottom: none;
+}
+
+.settings-info .info-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.settings-info .info-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-info .info-value.path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-info .info-value.capitalize {
+  text-transform: capitalize;
 }
 </style>
