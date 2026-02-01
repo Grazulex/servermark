@@ -374,3 +374,157 @@ pub fn disable_scheduler(site_path: String) -> Result<(), String> {
 
     Ok(())
 }
+
+// ============================================
+// Laravel Queue Worker Management (systemd user services)
+// ============================================
+
+/// Generate a slug from site path for service naming
+fn get_site_slug(site_path: &str) -> String {
+    site_path
+        .trim_start_matches('/')
+        .replace('/', "-")
+        .replace('.', "-")
+}
+
+/// Get the systemd user service name for a site
+fn get_queue_service_name(site_path: &str) -> String {
+    format!("servermark-queue-{}.service", get_site_slug(site_path))
+}
+
+/// Get the systemd user service directory
+fn get_systemd_user_dir() -> Result<std::path::PathBuf, String> {
+    let home = std::env::var("HOME").map_err(|_| "HOME not set")?;
+    let dir = std::path::PathBuf::from(home).join(".config/systemd/user");
+    Ok(dir)
+}
+
+/// Generate the systemd service file content
+fn generate_queue_service(site_path: &str, site_name: &str, php_path: &str) -> String {
+    format!(
+        r#"[Unit]
+Description=Laravel Queue Worker - {site_name}
+After=network.target
+
+[Service]
+ExecStart={php_path} {site_path}/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+WorkingDirectory={site_path}
+Restart=always
+RestartSec=5
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+"#,
+        site_name = site_name,
+        php_path = php_path,
+        site_path = site_path
+    )
+}
+
+/// Check if the Laravel queue worker is running for a site
+#[tauri::command]
+pub fn get_queue_status(site_path: String) -> Result<bool, String> {
+    let service_name = get_queue_service_name(&site_path);
+
+    let output = Command::new("systemctl")
+        .args(["--user", "is-active", &service_name])
+        .output();
+
+    match output {
+        Ok(out) => {
+            let status = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            Ok(status == "active")
+        }
+        Err(_) => Ok(false),
+    }
+}
+
+/// Start the Laravel queue worker for a site
+#[tauri::command]
+pub fn start_queue_worker(site_path: String, php_version: String, site_name: String) -> Result<(), String> {
+    let path = Path::new(&site_path);
+
+    // Verify it's a Laravel project
+    if !path.join("artisan").exists() {
+        return Err("Not a Laravel project".to_string());
+    }
+
+    // Check if already running
+    if get_queue_status(site_path.clone())? {
+        return Ok(()); // Already running
+    }
+
+    // Determine PHP path
+    let php_path = format!("/usr/bin/php{}", php_version);
+    if !Path::new(&php_path).exists() {
+        return Err(format!("PHP {} not found at {}", php_version, php_path));
+    }
+
+    // Ensure systemd user directory exists
+    let systemd_dir = get_systemd_user_dir()?;
+    fs::create_dir_all(&systemd_dir)
+        .map_err(|e| format!("Failed to create systemd user directory: {}", e))?;
+
+    // Generate and write service file
+    let service_name = get_queue_service_name(&site_path);
+    let service_path = systemd_dir.join(&service_name);
+    let service_content = generate_queue_service(&site_path, &site_name, &php_path);
+
+    fs::write(&service_path, service_content)
+        .map_err(|e| format!("Failed to write service file: {}", e))?;
+
+    // Reload systemd user daemon
+    Command::new("systemctl")
+        .args(["--user", "daemon-reload"])
+        .output()
+        .map_err(|e| format!("Failed to reload systemd: {}", e))?;
+
+    // Enable and start the service
+    let output = Command::new("systemctl")
+        .args(["--user", "enable", "--now", &service_name])
+        .output()
+        .map_err(|e| format!("Failed to start service: {}", e))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Failed to start queue worker: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ))
+    }
+}
+
+/// Stop the Laravel queue worker for a site
+#[tauri::command]
+pub fn stop_queue_worker(site_path: String) -> Result<(), String> {
+    let service_name = get_queue_service_name(&site_path);
+
+    // Stop and disable the service
+    let _ = Command::new("systemctl")
+        .args(["--user", "stop", &service_name])
+        .output();
+
+    let _ = Command::new("systemctl")
+        .args(["--user", "disable", &service_name])
+        .output();
+
+    // Remove the service file
+    let systemd_dir = get_systemd_user_dir()?;
+    let service_path = systemd_dir.join(&service_name);
+
+    if service_path.exists() {
+        fs::remove_file(&service_path)
+            .map_err(|e| format!("Failed to remove service file: {}", e))?;
+    }
+
+    // Reload systemd
+    Command::new("systemctl")
+        .args(["--user", "daemon-reload"])
+        .output()
+        .map_err(|e| format!("Failed to reload systemd: {}", e))?;
+
+    Ok(())
+}

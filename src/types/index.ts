@@ -32,6 +32,7 @@ export interface LaravelInfo {
   has_update?: boolean
   latest_version?: string | null
   scheduler_enabled?: boolean
+  queue_enabled?: boolean
 }
 
 // PHP types

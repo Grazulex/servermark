@@ -15,6 +15,7 @@ const emit = defineEmits<{
   upgradeLaravel: []
   fixPermissions: []
   toggleScheduler: []
+  toggleQueue: []
   remove: []
 }>()
 
@@ -176,6 +177,22 @@ const hasLaravelUpdate = computed(() => {
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </button>
+      <button
+        v-if="site.site_type === 'laravel'"
+        class="btn btn-icon"
+        :class="site.laravel?.queue_enabled ? 'btn-success' : 'btn-secondary'"
+        @click="emit('toggleQueue')"
+        :title="site.laravel?.queue_enabled ? 'Stop queue worker' : 'Start queue worker'"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
       </button>
       <button

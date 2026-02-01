@@ -42,16 +42,19 @@ export const useSitesStore = defineStore('sites', () => {
     try {
       const fetchedSites = await invoke<Site[]>('list_sites')
 
-      // Fetch scheduler status for Laravel sites
+      // Fetch scheduler and queue status for Laravel sites
       for (const site of fetchedSites) {
         if (site.site_type === 'laravel' && site.laravel) {
           try {
-            const schedulerEnabled = await invoke<boolean>('get_scheduler_status', {
-              sitePath: site.path,
-            })
+            const [schedulerEnabled, queueEnabled] = await Promise.all([
+              invoke<boolean>('get_scheduler_status', { sitePath: site.path }),
+              invoke<boolean>('get_queue_status', { sitePath: site.path }),
+            ])
             site.laravel.scheduler_enabled = schedulerEnabled
+            site.laravel.queue_enabled = queueEnabled
           } catch {
             site.laravel.scheduler_enabled = false
+            site.laravel.queue_enabled = false
           }
         }
       }
@@ -261,6 +264,63 @@ export const useSitesStore = defineStore('sites', () => {
     }
   }
 
+  async function getQueueStatus(sitePath: string): Promise<boolean> {
+    try {
+      return await invoke<boolean>('get_queue_status', { sitePath })
+    } catch (e) {
+      console.error('Failed to get queue status:', e)
+      return false
+    }
+  }
+
+  async function startQueueWorker(site: Site): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await invoke('start_queue_worker', {
+        sitePath: site.path,
+        phpVersion: site.php_version,
+        siteName: site.name,
+      })
+      // Update local state
+      const siteIndex = sites.value.findIndex(s => s.id === site.id)
+      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
+        sites.value[siteIndex].laravel!.queue_enabled = true
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to start queue worker'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function stopQueueWorker(site: Site): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await invoke('stop_queue_worker', { sitePath: site.path })
+      // Update local state
+      const siteIndex = sites.value.findIndex(s => s.id === site.id)
+      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
+        sites.value[siteIndex].laravel!.queue_enabled = false
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to stop queue worker'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function toggleQueueWorker(site: Site): Promise<void> {
+    if (site.laravel?.queue_enabled) {
+      await stopQueueWorker(site)
+    } else {
+      await startQueueWorker(site)
+    }
+  }
+
   return {
     // State
     sites,
@@ -286,5 +346,9 @@ export const useSitesStore = defineStore('sites', () => {
     enableScheduler,
     disableScheduler,
     toggleScheduler,
+    getQueueStatus,
+    startQueueWorker,
+    stopQueueWorker,
+    toggleQueueWorker,
   }
 })
