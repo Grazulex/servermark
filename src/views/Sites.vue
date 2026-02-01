@@ -227,6 +227,7 @@ async function saveSettings() {
         @unsecure="sitesStore.unsecureSite(site.id)"
         @settings="openSettings(site)"
         @fix-permissions="fixPermissions(site.path)"
+        @toggle-scheduler="sitesStore.toggleScheduler(site)"
         @upgrade-laravel="() => {}"
         @remove="sitesStore.removeSite(site.id)"
       />

@@ -119,6 +119,9 @@ pub fn run() {
             commands::get_latest_laravel_version,
             commands::upgrade_laravel,
             commands::create_laravel_project,
+            commands::get_scheduler_status,
+            commands::enable_scheduler,
+            commands::disable_scheduler,
             // Sites commands
             commands::list_sites,
             commands::add_site,

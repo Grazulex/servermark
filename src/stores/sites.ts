@@ -40,7 +40,23 @@ export const useSitesStore = defineStore('sites', () => {
     loading.value = true
     error.value = null
     try {
-      sites.value = await invoke<Site[]>('list_sites')
+      const fetchedSites = await invoke<Site[]>('list_sites')
+
+      // Fetch scheduler status for Laravel sites
+      for (const site of fetchedSites) {
+        if (site.site_type === 'laravel' && site.laravel) {
+          try {
+            const schedulerEnabled = await invoke<boolean>('get_scheduler_status', {
+              sitePath: site.path,
+            })
+            site.laravel.scheduler_enabled = schedulerEnabled
+          } catch {
+            site.laravel.scheduler_enabled = false
+          }
+        }
+      }
+
+      sites.value = fetchedSites
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch sites'
     } finally {
@@ -189,6 +205,62 @@ export const useSitesStore = defineStore('sites', () => {
     }
   }
 
+  async function getSchedulerStatus(sitePath: string): Promise<boolean> {
+    try {
+      return await invoke<boolean>('get_scheduler_status', { sitePath })
+    } catch (e) {
+      console.error('Failed to get scheduler status:', e)
+      return false
+    }
+  }
+
+  async function enableScheduler(site: Site): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await invoke('enable_scheduler', {
+        sitePath: site.path,
+        phpVersion: site.php_version,
+      })
+      // Update local state
+      const siteIndex = sites.value.findIndex(s => s.id === site.id)
+      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
+        sites.value[siteIndex].laravel!.scheduler_enabled = true
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to enable scheduler'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function disableScheduler(site: Site): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await invoke('disable_scheduler', { sitePath: site.path })
+      // Update local state
+      const siteIndex = sites.value.findIndex(s => s.id === site.id)
+      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
+        sites.value[siteIndex].laravel!.scheduler_enabled = false
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to disable scheduler'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function toggleScheduler(site: Site): Promise<void> {
+    if (site.laravel?.scheduler_enabled) {
+      await disableScheduler(site)
+    } else {
+      await enableScheduler(site)
+    }
+  }
+
   return {
     // State
     sites,
@@ -210,5 +282,9 @@ export const useSitesStore = defineStore('sites', () => {
     cloneRepository,
     secureSite,
     unsecureSite,
+    getSchedulerStatus,
+    enableScheduler,
+    disableScheduler,
+    toggleScheduler,
   }
 })

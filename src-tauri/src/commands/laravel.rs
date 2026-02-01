@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LaravelInfo {
@@ -206,4 +207,170 @@ pub fn create_laravel_project(
     } else {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
     }
+}
+
+// ============================================
+// Laravel Scheduler (Cron) Management
+// ============================================
+
+/// Generate the cron comment identifier for a site
+fn get_cron_identifier(site_path: &str) -> String {
+    format!("# ServerMark Scheduler: {}", site_path)
+}
+
+/// Generate the cron job line for Laravel scheduler
+fn get_cron_job(site_path: &str, php_path: &str) -> String {
+    format!(
+        "* * * * * cd {} && {} artisan schedule:run >> /dev/null 2>&1",
+        site_path, php_path
+    )
+}
+
+/// Check if the Laravel scheduler is enabled for a site
+#[tauri::command]
+pub fn get_scheduler_status(site_path: String) -> Result<bool, String> {
+    let identifier = get_cron_identifier(&site_path);
+
+    // Get current crontab
+    let output = Command::new("crontab")
+        .arg("-l")
+        .output();
+
+    match output {
+        Ok(out) => {
+            if out.status.success() {
+                let crontab = String::from_utf8_lossy(&out.stdout);
+                Ok(crontab.contains(&identifier))
+            } else {
+                // No crontab for user - scheduler not enabled
+                Ok(false)
+            }
+        }
+        Err(_) => Ok(false),
+    }
+}
+
+/// Enable the Laravel scheduler for a site
+#[tauri::command]
+pub fn enable_scheduler(site_path: String, php_version: String) -> Result<(), String> {
+    let path = Path::new(&site_path);
+
+    // Verify it's a Laravel project
+    if !path.join("artisan").exists() {
+        return Err("Not a Laravel project".to_string());
+    }
+
+    // Check if already enabled
+    if get_scheduler_status(site_path.clone())? {
+        return Ok(()); // Already enabled
+    }
+
+    // Determine PHP path
+    let php_path = format!("/usr/bin/php{}", php_version);
+    if !Path::new(&php_path).exists() {
+        return Err(format!("PHP {} not found at {}", php_version, php_path));
+    }
+
+    let identifier = get_cron_identifier(&site_path);
+    let cron_job = get_cron_job(&site_path, &php_path);
+
+    // Get current crontab
+    let current_crontab = Command::new("crontab")
+        .arg("-l")
+        .output()
+        .map(|out| {
+            if out.status.success() {
+                String::from_utf8_lossy(&out.stdout).to_string()
+            } else {
+                String::new()
+            }
+        })
+        .unwrap_or_default();
+
+    // Add new cron job
+    let new_crontab = if current_crontab.is_empty() {
+        format!("{}\n{}\n", identifier, cron_job)
+    } else {
+        format!("{}\n{}\n{}\n", current_crontab.trim_end(), identifier, cron_job)
+    };
+
+    // Write new crontab
+    let mut child = Command::new("crontab")
+        .arg("-")
+        .stdin(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn crontab: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(new_crontab.as_bytes())
+            .map_err(|e| format!("Failed to write crontab: {}", e))?;
+    }
+
+    let status = child.wait().map_err(|e| format!("Failed to wait for crontab: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err("Failed to update crontab".to_string())
+    }
+}
+
+/// Disable the Laravel scheduler for a site
+#[tauri::command]
+pub fn disable_scheduler(site_path: String) -> Result<(), String> {
+    let identifier = get_cron_identifier(&site_path);
+
+    // Get current crontab
+    let output = Command::new("crontab")
+        .arg("-l")
+        .output()
+        .map_err(|e| format!("Failed to read crontab: {}", e))?;
+
+    if !output.status.success() {
+        return Ok(()); // No crontab, nothing to disable
+    }
+
+    let current_crontab = String::from_utf8_lossy(&output.stdout);
+
+    // Filter out the scheduler lines for this site
+    let new_lines: Vec<&str> = current_crontab
+        .lines()
+        .filter(|line| {
+            // Remove the identifier line and the cron job line
+            !line.contains(&format!("ServerMark Scheduler: {}", site_path))
+                && !line.contains(&format!("cd {} &&", site_path))
+        })
+        .collect();
+
+    let new_crontab = new_lines.join("\n");
+
+    // Write new crontab (or remove if empty)
+    if new_crontab.trim().is_empty() {
+        // Remove crontab entirely
+        Command::new("crontab")
+            .arg("-r")
+            .output()
+            .map_err(|e| format!("Failed to remove crontab: {}", e))?;
+    } else {
+        let mut child = Command::new("crontab")
+            .arg("-")
+            .stdin(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to spawn crontab: {}", e))?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin
+                .write_all(format!("{}\n", new_crontab).as_bytes())
+                .map_err(|e| format!("Failed to write crontab: {}", e))?;
+        }
+
+        let status = child.wait().map_err(|e| format!("Failed to wait for crontab: {}", e))?;
+
+        if !status.success() {
+            return Err("Failed to update crontab".to_string());
+        }
+    }
+
+    Ok(())
 }

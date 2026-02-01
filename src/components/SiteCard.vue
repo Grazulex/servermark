@@ -14,6 +14,7 @@ const emit = defineEmits<{
   unsecure: []
   upgradeLaravel: []
   fixPermissions: []
+  toggleScheduler: []
   remove: []
 }>()
 
@@ -163,6 +164,18 @@ const hasLaravelUpdate = computed(() => {
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </button>
+      <button
+        v-if="site.site_type === 'laravel'"
+        class="btn btn-icon"
+        :class="site.laravel?.scheduler_enabled ? 'btn-success' : 'btn-secondary'"
+        @click="emit('toggleScheduler')"
+        :title="site.laravel?.scheduler_enabled ? 'Disable scheduler' : 'Enable scheduler'"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
         </svg>
       </button>
       <button
