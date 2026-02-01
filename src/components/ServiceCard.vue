@@ -44,27 +44,38 @@ const canStop = computed(() => props.service.status === 'running')
     <div class="service-actions">
       <button
         v-if="canStart"
-        class="btn btn-success"
+        class="btn btn-icon btn-success"
         :disabled="isLoading"
+        title="Start"
         @click="emit('start')"
       >
-        Start
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
       </button>
       <button
         v-if="canStop"
-        class="btn btn-danger"
+        class="btn btn-icon btn-warning"
         :disabled="isLoading"
+        title="Stop"
         @click="emit('stop')"
       >
-        Stop
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
+        </svg>
       </button>
       <button
         v-if="canStop"
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
         :disabled="isLoading"
+        title="Restart"
         @click="emit('restart')"
       >
-        Restart
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -153,6 +164,7 @@ const canStop = computed(() => props.service.status === 'running')
 .service-actions {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .btn {
@@ -163,6 +175,19 @@ const canStop = computed(() => props.service.status === 'running')
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  flex-shrink: 0;
 }
 
 .btn:disabled {
@@ -179,13 +204,13 @@ const canStop = computed(() => props.service.status === 'running')
   background: var(--color-success-hover);
 }
 
-.btn-danger {
-  background: var(--color-danger);
+.btn-warning {
+  background: var(--color-warning);
   color: white;
 }
 
-.btn-danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
+.btn-warning:hover:not(:disabled) {
+  background: var(--color-warning-hover);
 }
 
 .btn-secondary {
