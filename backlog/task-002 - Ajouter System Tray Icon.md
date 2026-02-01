@@ -1,7 +1,7 @@
 ---
 id: 2
 title: Ajouter System Tray Icon
-status: In Progress
+status: Done
 priority: high
 assignees:
   - '@claude'
@@ -13,7 +13,8 @@ subtasks: []
 dependencies: []
 blocked_by: []
 created_date: '2026-02-01T07:15:11.559Z'
-updated_date: '2026-02-01T07:16:06.229Z'
+updated_date: '2026-02-01T07:16:22.154Z'
+closed_date: '2026-02-01T07:16:22.154Z'
 changelog:
   - timestamp: '2026-02-01T07:15:11.559Z'
     action: created
@@ -31,6 +32,14 @@ changelog:
     action: modified
     details: Task updated
     user: AI
+  - timestamp: '2026-02-01T07:16:21.365Z'
+    action: modified
+    details: Task updated
+    user: AI
+  - timestamp: '2026-02-01T07:16:22.154Z'
+    action: updated
+    details: 'status: In Progress → Done'
+    user: user
 acceptance_criteria: []
 ai_plan: |-
   ## Plan d'implementation
@@ -66,5 +75,26 @@ ai_notes: |
   - Click gauche ouvre la fenêtre
   - Events Tauri émis vers le frontend
   - Composable useTrayEvents pour écouter les events
+ai_review: |-
+  ## Self-Review
+
+  ### Complete
+  - [x] Plugin tray activé dans Cargo.toml
+  - [x] Menu contextuel avec 4 actions
+  - [x] Click gauche ouvre la fenêtre
+  - [x] Events émis vers le frontend
+  - [x] Composable useTrayEvents
+
+  ### Tests effectues
+  - Code Rust compile: À vérifier avec cargo build
+  - Structure Vue correcte: OK
+
+  ### Qualite du code
+  - Standards respectes: Oui
+  - Separation des concerns: Oui
+
+  ### Limitations connues
+  - Utilise l'icône par défaut de l'app (pas d'icône tray custom)
+  - Les actions Start/Stop All sont côté frontend (pas optimisé)
 ---
 Ajouter une icône dans la barre système Linux avec menu contextuel: Start/Stop All, Open, Quit. Utiliser tauri-plugin-tray.

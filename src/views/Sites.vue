@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { useSitesStore, usePhpStore } from '@/stores'
-import StatusBadge from '@/components/StatusBadge.vue'
+import { useSitesStore } from '@/stores'
+import SiteCard from '@/components/SiteCard.vue'
 
 const sitesStore = useSitesStore()
-const phpStore = usePhpStore()
+
+function openSite(domain: string, secured: boolean) {
+  const url = `http${secured ? 's' : ''}://${domain}`
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
@@ -32,26 +36,19 @@ const phpStore = usePhpStore()
 
     <div
       v-else
-      class="sites-list"
+      class="sites-grid"
     >
-      <div
+      <SiteCard
         v-for="site in sitesStore.sites"
         :key="site.id"
-        class="site-card"
-      >
-        <div class="site-info">
-          <div class="site-name">{{ site.name }}</div>
-          <div class="site-domain">{{ site.domain }}</div>
-        </div>
-        <div class="site-meta">
-          <span class="site-php">PHP {{ site.phpVersion }}</span>
-          <StatusBadge :status="site.secured ? 'running' : 'stopped'" />
-        </div>
-        <div class="site-actions">
-          <button class="btn btn-sm">Open</button>
-          <button class="btn btn-sm">Settings</button>
-        </div>
-      </div>
+        :site="site"
+        @open="openSite(site.domain, site.secured)"
+        @secure="sitesStore.secureSite(site.id)"
+        @unsecure="sitesStore.unsecureSite(site.id)"
+        @settings="() => {}"
+        @upgrade-laravel="() => {}"
+        @remove="sitesStore.removeSite(site.id)"
+      />
     </div>
   </div>
 </template>
@@ -99,17 +96,6 @@ const phpStore = usePhpStore()
   background: var(--color-primary-hover);
 }
 
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 13px;
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-}
-
-.btn-sm:hover {
-  background: var(--color-bg-hover);
-}
-
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -144,51 +130,9 @@ const phpStore = usePhpStore()
   margin: 0 0 20px;
 }
 
-.sites-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.site-card {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 16px 20px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-}
-
-.site-info {
-  flex: 1;
-}
-
-.site-name {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.site-domain {
-  font-size: 13px;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
-}
-
-.site-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.site-php {
-  font-size: 13px;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-}
-
-.site-actions {
-  display: flex;
-  gap: 8px;
+.sites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 16px;
 }
 </style>

@@ -107,6 +107,11 @@ pub fn run() {
             commands::stop_container,
             commands::remove_container,
             commands::get_container_logs,
+            // Laravel commands
+            commands::detect_laravel_version,
+            commands::get_latest_laravel_version,
+            commands::upgrade_laravel,
+            commands::create_laravel_project,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -20,6 +20,17 @@ export interface Site {
   domain: string
   type: 'laravel' | 'symfony' | 'wordpress' | 'static' | 'proxy'
   proxyTarget?: string
+  laravel?: LaravelInfo
+}
+
+// Laravel types
+export interface LaravelInfo {
+  detected: boolean
+  version: string | null
+  constraint: string | null
+  phpVersion: string | null
+  hasUpdate: boolean
+  latestVersion: string | null
 }
 
 // PHP types
