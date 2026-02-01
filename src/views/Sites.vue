@@ -21,6 +21,14 @@ const editingSite = ref<Site | null>(null)
 const editPhpVersion = ref('')
 const savingSettings = ref(false)
 
+// Logs modal state
+const showLogsModal = ref(false)
+const logsSite = ref<Site | null>(null)
+const logsTab = ref<'scheduler' | 'queue'>('scheduler')
+const schedulerLogs = ref('')
+const queueLogs = ref('')
+const loadingLogs = ref(false)
+
 // Form state
 const projectName = ref('')
 const projectPath = ref('')
@@ -186,6 +194,43 @@ async function saveSettings() {
     savingSettings.value = false
   }
 }
+
+async function openLogsModal(site: Site) {
+  logsSite.value = site
+  logsTab.value = 'scheduler'
+  showLogsModal.value = true
+  await fetchLogs()
+}
+
+function closeLogsModal() {
+  showLogsModal.value = false
+  logsSite.value = null
+  schedulerLogs.value = ''
+  queueLogs.value = ''
+}
+
+async function fetchLogs() {
+  if (!logsSite.value) return
+
+  loadingLogs.value = true
+  try {
+    const [scheduler, queue] = await Promise.all([
+      sitesStore.getSchedulerLogs(logsSite.value.path, 200),
+      sitesStore.getQueueLogs(logsSite.value.path, 200),
+    ])
+    schedulerLogs.value = scheduler
+    queueLogs.value = queue
+  } finally {
+    loadingLogs.value = false
+  }
+}
+
+async function clearLogs() {
+  if (!logsSite.value) return
+
+  await sitesStore.clearSchedulerLogs(logsSite.value.path)
+  schedulerLogs.value = 'Logs cleared.'
+}
 </script>
 
 <template>
@@ -229,6 +274,7 @@ async function saveSettings() {
         @fix-permissions="fixPermissions(site.path)"
         @toggle-scheduler="sitesStore.toggleScheduler(site)"
         @toggle-queue="sitesStore.toggleQueueWorker(site)"
+        @view-logs="openLogsModal(site)"
         @upgrade-laravel="() => {}"
         @remove="sitesStore.removeSite(site.id)"
       />
@@ -549,6 +595,59 @@ async function saveSettings() {
             >
               {{ savingSettings ? 'Saving...' : 'Save Settings' }}
             </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Logs Modal -->
+    <Teleport to="body">
+      <div v-if="showLogsModal" class="modal-overlay" @click.self="closeLogsModal">
+        <div class="modal logs-modal">
+          <div class="modal-header">
+            <h2>Laravel Logs - {{ logsSite?.name }}</h2>
+            <button class="close-btn" @click="closeLogsModal">&times;</button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="logs-tabs">
+            <button
+              class="logs-tab"
+              :class="{ active: logsTab === 'scheduler' }"
+              @click="logsTab = 'scheduler'"
+            >
+              Scheduler
+              <span v-if="logsSite?.laravel?.scheduler_enabled" class="tab-badge active">ON</span>
+              <span v-else class="tab-badge">OFF</span>
+            </button>
+            <button
+              class="logs-tab"
+              :class="{ active: logsTab === 'queue' }"
+              @click="logsTab = 'queue'"
+            >
+              Queue Worker
+              <span v-if="logsSite?.laravel?.queue_enabled" class="tab-badge active">ON</span>
+              <span v-else class="tab-badge">OFF</span>
+            </button>
+          </div>
+
+          <div class="modal-body logs-body">
+            <div v-if="loadingLogs" class="logs-loading">Loading logs...</div>
+            <pre v-else class="logs-content">{{ logsTab === 'scheduler' ? schedulerLogs : queueLogs }}</pre>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              v-if="logsTab === 'scheduler'"
+              class="btn btn-secondary"
+              @click="clearLogs"
+            >
+              Clear Logs
+            </button>
+            <button class="btn btn-secondary" @click="fetchLogs">
+              Refresh
+            </button>
+            <button class="btn btn-primary" @click="closeLogsModal">Close</button>
           </div>
         </div>
       </div>
@@ -981,5 +1080,85 @@ async function saveSettings() {
 
 .settings-info .info-value.capitalize {
   text-transform: capitalize;
+}
+
+/* Logs Modal */
+.logs-modal {
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.logs-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logs-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.logs-tab:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.logs-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+}
+
+.tab-badge.active {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
+.logs-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.logs-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.logs-content {
+  margin: 0;
+  padding: 16px;
+  background: var(--color-bg-primary);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  overflow: auto;
+  max-height: 400px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

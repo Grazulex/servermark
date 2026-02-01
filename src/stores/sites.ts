@@ -321,6 +321,26 @@ export const useSitesStore = defineStore('sites', () => {
     }
   }
 
+  async function getSchedulerLogs(sitePath: string, lines?: number): Promise<string> {
+    try {
+      return await invoke<string>('get_scheduler_logs', { sitePath, lines })
+    } catch (e) {
+      return `Error fetching scheduler logs: ${e}`
+    }
+  }
+
+  async function getQueueLogs(sitePath: string, lines?: number): Promise<string> {
+    try {
+      return await invoke<string>('get_queue_logs', { sitePath, lines })
+    } catch (e) {
+      return `Error fetching queue logs: ${e}`
+    }
+  }
+
+  async function clearSchedulerLogs(sitePath: string): Promise<void> {
+    await invoke('clear_scheduler_logs', { sitePath })
+  }
+
   return {
     // State
     sites,
@@ -350,5 +370,8 @@ export const useSitesStore = defineStore('sites', () => {
     startQueueWorker,
     stopQueueWorker,
     toggleQueueWorker,
+    getSchedulerLogs,
+    getQueueLogs,
+    clearSchedulerLogs,
   }
 })

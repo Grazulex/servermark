@@ -125,6 +125,9 @@ pub fn run() {
             commands::get_queue_status,
             commands::start_queue_worker,
             commands::stop_queue_worker,
+            commands::get_scheduler_logs,
+            commands::get_queue_logs,
+            commands::clear_scheduler_logs,
             // Sites commands
             commands::list_sites,
             commands::add_site,

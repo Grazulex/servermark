@@ -221,8 +221,8 @@ fn get_cron_identifier(site_path: &str) -> String {
 /// Generate the cron job line for Laravel scheduler
 fn get_cron_job(site_path: &str, php_path: &str) -> String {
     format!(
-        "* * * * * cd {} && {} artisan schedule:run >> /dev/null 2>&1",
-        site_path, php_path
+        "* * * * * cd {} && {} artisan schedule:run >> {}/storage/logs/scheduler.log 2>&1",
+        site_path, php_path, site_path
     )
 }
 
@@ -525,6 +525,83 @@ pub fn stop_queue_worker(site_path: String) -> Result<(), String> {
         .args(["--user", "daemon-reload"])
         .output()
         .map_err(|e| format!("Failed to reload systemd: {}", e))?;
+
+    Ok(())
+}
+
+// ============================================
+// Laravel Logs
+// ============================================
+
+/// Get the scheduler logs for a site (from storage/logs/scheduler.log)
+#[tauri::command]
+pub fn get_scheduler_logs(site_path: String, lines: Option<u32>) -> Result<String, String> {
+    let log_path = Path::new(&site_path).join("storage/logs/scheduler.log");
+
+    if !log_path.exists() {
+        return Ok("No scheduler logs yet. The scheduler will create logs after its first run.".to_string());
+    }
+
+    let lines = lines.unwrap_or(100);
+
+    // Use tail to get the last N lines
+    let output = Command::new("tail")
+        .args(["-n", &lines.to_string(), log_path.to_str().unwrap()])
+        .output()
+        .map_err(|e| format!("Failed to read scheduler logs: {}", e))?;
+
+    if output.status.success() {
+        let logs = String::from_utf8_lossy(&output.stdout).to_string();
+        if logs.trim().is_empty() {
+            Ok("Scheduler log file is empty.".to_string())
+        } else {
+            Ok(logs)
+        }
+    } else {
+        Err("Failed to read scheduler logs".to_string())
+    }
+}
+
+/// Get the queue worker logs for a site (from journalctl)
+#[tauri::command]
+pub fn get_queue_logs(site_path: String, lines: Option<u32>) -> Result<String, String> {
+    let service_name = get_queue_service_name(&site_path);
+    let lines = lines.unwrap_or(100);
+
+    let output = Command::new("journalctl")
+        .args([
+            "--user",
+            "-u",
+            &service_name,
+            "-n",
+            &lines.to_string(),
+            "--no-pager",
+        ])
+        .output()
+        .map_err(|e| format!("Failed to read queue logs: {}", e))?;
+
+    if output.status.success() {
+        let logs = String::from_utf8_lossy(&output.stdout).to_string();
+        if logs.trim().is_empty() || logs.contains("No entries") {
+            Ok("No queue worker logs yet. Start the queue worker to see logs.".to_string())
+        } else {
+            Ok(logs)
+        }
+    } else {
+        // journalctl might fail if service never existed
+        Ok("No queue worker logs available.".to_string())
+    }
+}
+
+/// Clear the scheduler logs for a site
+#[tauri::command]
+pub fn clear_scheduler_logs(site_path: String) -> Result<(), String> {
+    let log_path = Path::new(&site_path).join("storage/logs/scheduler.log");
+
+    if log_path.exists() {
+        fs::write(&log_path, "")
+            .map_err(|e| format!("Failed to clear scheduler logs: {}", e))?;
+    }
 
     Ok(())
 }
