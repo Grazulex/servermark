@@ -1,7 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter, Manager,
 };
 use tauri_plugin_log::{Target, TargetKind};
 
@@ -99,6 +99,7 @@ pub fn run() {
             commands::stop_service,
             commands::get_php_versions,
             commands::switch_php_version,
+            commands::install_php_version,
             // Docker/Podman commands
             commands::detect_container_runtime,
             commands::list_containers,
