@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import type {
   Container,
-  ContainerRuntime,
   RuntimeInfo,
   ServiceTemplate,
   ServiceType,
+  PortMapping,
 } from '@/types/docker'
 
 // Service templates
@@ -167,16 +168,12 @@ export const useDockerStore = defineStore('docker', () => {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // const info = await invoke('detect_container_runtime')
-      // runtime.value = info
-
-      // Placeholder - will be replaced with actual Tauri call
+      const info = await invoke<RuntimeInfo>('detect_container_runtime')
       runtime.value = {
-        runtime: 'docker',
-        version: '24.0.0',
-        apiVersion: '1.43',
-        available: true,
+        runtime: info.runtime,
+        version: info.version,
+        apiVersion: info.apiVersion || info.api_version || '',
+        available: info.available,
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to detect runtime'
@@ -192,8 +189,7 @@ export const useDockerStore = defineStore('docker', () => {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // containers.value = await invoke('list_containers')
+      containers.value = await invoke<Container[]>('list_containers')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to list containers'
     } finally {
@@ -212,14 +208,28 @@ export const useDockerStore = defineStore('docker', () => {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // await invoke('create_container', {
-      //   image: `${template.image}:${tag || template.defaultTag}`,
-      //   name: `servermark-${service}`,
-      //   ports: customPorts || template.ports,
-      //   environment: template.environment,
-      //   volumes: template.volumes,
-      // })
+      // Build ports array
+      const ports: PortMapping[] = template.ports.map((p) => ({
+        host: customPorts?.[p.container] || p.host,
+        container: p.container,
+        protocol: p.protocol,
+      }))
+
+      // Build volumes array
+      const volumes = template.volumes?.map((v) => ({
+        name: `servermark-${service}-${v.name}`,
+        container: v.container,
+      }))
+
+      await invoke('create_container', {
+        params: {
+          image: `${template.image}:${tag || template.defaultTag}`,
+          name: `servermark-${service}`,
+          ports,
+          environment: template.environment,
+          volumes,
+        },
+      })
       await listContainers()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to create container'
@@ -233,10 +243,8 @@ export const useDockerStore = defineStore('docker', () => {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // await invoke('start_container', { id })
-      const container = containers.value.find((c) => c.id === id)
-      if (container) container.status = 'running'
+      await invoke('start_container', { id })
+      await listContainers()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to start container'
       throw e
@@ -249,10 +257,8 @@ export const useDockerStore = defineStore('docker', () => {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // await invoke('stop_container', { id })
-      const container = containers.value.find((c) => c.id === id)
-      if (container) container.status = 'stopped'
+      await invoke('stop_container', { id })
+      await listContainers()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to stop container'
       throw e
@@ -261,13 +267,12 @@ export const useDockerStore = defineStore('docker', () => {
     }
   }
 
-  async function removeContainer(id: string): Promise<void> {
+  async function removeContainer(id: string, force: boolean = false): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      // TODO: Call Tauri command
-      // await invoke('remove_container', { id })
-      containers.value = containers.value.filter((c) => c.id !== id)
+      await invoke('remove_container', { id, force })
+      await listContainers()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to remove container'
       throw e
@@ -279,6 +284,15 @@ export const useDockerStore = defineStore('docker', () => {
   async function restartContainer(id: string): Promise<void> {
     await stopContainer(id)
     await startContainer(id)
+  }
+
+  async function getContainerLogs(id: string, lines: number = 100): Promise<string> {
+    try {
+      return await invoke<string>('get_container_logs', { id, lines })
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to get logs'
+      throw e
+    }
   }
 
   function getTemplate(service: ServiceType): ServiceTemplate | undefined {
@@ -305,6 +319,7 @@ export const useDockerStore = defineStore('docker', () => {
     stopContainer,
     removeContainer,
     restartContainer,
+    getContainerLogs,
     getTemplate,
   }
 })

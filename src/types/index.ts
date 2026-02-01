@@ -15,11 +15,11 @@ export interface Site {
   id: string
   name: string
   path: string
-  phpVersion: string
+  php_version: string
   secured: boolean
   domain: string
-  type: 'laravel' | 'symfony' | 'wordpress' | 'static' | 'proxy'
-  proxyTarget?: string
+  site_type: 'laravel' | 'symfony' | 'wordpress' | 'static' | 'proxy'
+  proxy_target?: string
   laravel?: LaravelInfo
 }
 
@@ -28,9 +28,9 @@ export interface LaravelInfo {
   detected: boolean
   version: string | null
   constraint: string | null
-  phpVersion: string | null
-  hasUpdate: boolean
-  latestVersion: string | null
+  php_version: string | null
+  has_update?: boolean
+  latest_version?: string | null
 }
 
 // PHP types
@@ -58,13 +58,10 @@ export type LinuxDistro =
 
 export type PackageManager = 'apt' | 'dnf' | 'pacman' | 'zypper'
 
-export type WebServer = 'nginx' | 'caddy'
-
 export interface Config {
   tld: string
   loopback: string
   sitesPath: string
-  webServer: WebServer
   distro: LinuxDistro
   packageManager: PackageManager
 }

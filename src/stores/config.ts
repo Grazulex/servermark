@@ -7,7 +7,6 @@ export const useConfigStore = defineStore('config', () => {
     tld: 'test',
     loopback: '127.0.0.1',
     sitesPath: '',
-    webServer: 'nginx',
     distro: 'unknown',
     packageManager: 'apt',
   })

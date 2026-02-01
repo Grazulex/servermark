@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useDockerStore } from '@/stores/docker'
 import ContainerCard from '@/components/ContainerCard.vue'
-import type { ServiceType, ServiceTemplate } from '@/types/docker'
+import type { ServiceType, ServiceTemplate, Container } from '@/types/docker'
 
 const dockerStore = useDockerStore()
 
 const showAddModal = ref(false)
 const selectedService = ref<ServiceTemplate | null>(null)
 const selectedTag = ref('')
+
+// Logs modal state
+const showLogsModal = ref(false)
+const logsContent = ref('')
+const logsContainerName = ref('')
+const logsLoading = ref(false)
 
 onMounted(async () => {
   await dockerStore.detectRuntime()
@@ -48,6 +54,26 @@ async function createService() {
 function closeModal() {
   showAddModal.value = false
   selectedService.value = null
+}
+
+async function openLogs(container: Container) {
+  logsContainerName.value = container.name.replace(/^\//, '').replace(/^servermark-/, '')
+  logsContent.value = ''
+  showLogsModal.value = true
+  logsLoading.value = true
+
+  try {
+    logsContent.value = await dockerStore.getContainerLogs(container.id, 200)
+  } catch (e) {
+    logsContent.value = `Error fetching logs: ${e}`
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+function closeLogsModal() {
+  showLogsModal.value = false
+  logsContent.value = ''
 }
 </script>
 
@@ -129,6 +155,7 @@ function closeModal() {
           @stop="dockerStore.stopContainer(container.id)"
           @restart="dockerStore.restartContainer(container.id)"
           @remove="dockerStore.removeContainer(container.id)"
+          @logs="openLogs(container)"
         />
       </div>
     </template>
@@ -253,6 +280,33 @@ function closeModal() {
             >
               {{ dockerStore.loading ? 'Creating...' : 'Create Service' }}
             </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Logs Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showLogsModal"
+        class="modal-overlay"
+        @click.self="closeLogsModal"
+      >
+        <div class="modal logs-modal">
+          <div class="modal-header">
+            <h2>Logs: {{ logsContainerName }}</h2>
+            <button
+              class="close-btn"
+              @click="closeLogsModal"
+            >
+              &times;
+            </button>
+          </div>
+          <div class="modal-body logs-body">
+            <div v-if="logsLoading" class="logs-loading">
+              Loading logs...
+            </div>
+            <pre v-else class="logs-content">{{ logsContent || 'No logs available' }}</pre>
           </div>
         </div>
       </div>
@@ -567,6 +621,25 @@ function closeModal() {
   border-radius: 8px;
   color: var(--color-text-primary);
   font-size: 14px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.config-field select option {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 8px 12px;
+}
+
+.config-field select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .ports-preview,
@@ -595,5 +668,37 @@ function closeModal() {
 .env-value::before {
   content: '=';
   margin-right: 4px;
+}
+
+/* Logs Modal */
+.logs-modal {
+  max-width: 800px;
+  max-height: 90vh;
+}
+
+.logs-body {
+  padding: 0;
+  max-height: 60vh;
+  overflow: hidden;
+}
+
+.logs-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.logs-content {
+  margin: 0;
+  padding: 16px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
+  max-height: 60vh;
 }
 </style>

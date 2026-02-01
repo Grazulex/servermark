@@ -23,7 +23,7 @@ const typeIcon = computed(() => {
     static: 'H',
     proxy: 'P',
   }
-  return icons[props.site.type] || '?'
+  return icons[props.site.site_type] || '?'
 })
 
 const typeColor = computed(() => {
@@ -34,11 +34,11 @@ const typeColor = computed(() => {
     static: '#4a5568',
     proxy: '#805ad5',
   }
-  return colors[props.site.type] || '#4a5568'
+  return colors[props.site.site_type] || '#4a5568'
 })
 
 const hasLaravelUpdate = computed(() => {
-  return props.site.laravel?.detected && props.site.laravel?.hasUpdate
+  return props.site.laravel?.detected && props.site.laravel?.has_update
 })
 </script>
 
@@ -80,11 +80,11 @@ const hasLaravelUpdate = computed(() => {
     <div class="site-meta">
       <div class="meta-item">
         <span class="meta-label">PHP</span>
-        <span class="meta-value">{{ site.phpVersion }}</span>
+        <span class="meta-value">{{ site.php_version }}</span>
       </div>
       <div class="meta-item">
         <span class="meta-label">Type</span>
-        <span class="meta-value capitalize">{{ site.type }}</span>
+        <span class="meta-value capitalize">{{ site.site_type }}</span>
       </div>
       <div
         v-if="site.laravel?.detected"
@@ -96,7 +96,7 @@ const hasLaravelUpdate = computed(() => {
           <span
             v-if="hasLaravelUpdate"
             class="update-badge"
-            :title="`Update available: ${site.laravel.latestVersion}`"
+            :title="`Update available: ${site.laravel?.latest_version}`"
           >
             !
           </span>
@@ -142,6 +142,13 @@ const hasLaravelUpdate = computed(() => {
         @click="emit('settings')"
       >
         Settings
+      </button>
+      <button
+        class="btn btn-danger-outline"
+        @click="emit('remove')"
+        title="Remove from ServerMark (files are kept)"
+      >
+        Remove
       </button>
     </div>
   </div>
@@ -345,5 +352,16 @@ const hasLaravelUpdate = computed(() => {
 
 .btn-secondary:hover {
   background: var(--color-bg-hover);
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-danger-outline:hover {
+  background: var(--color-danger);
+  color: white;
 }
 </style>

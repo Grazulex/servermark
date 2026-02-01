@@ -1,14 +1,91 @@
 <script setup lang="ts">
-import { useConfigStore } from '@/stores'
+import { ref, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
 
-const configStore = useConfigStore()
+interface SitesConfig {
+  tld: string
+  sites_path: string
+  loopback?: string
+}
+
+interface SystemInfo {
+  distro: string
+  distro_version: string
+  package_manager: string
+}
+
+const config = ref<SitesConfig>({
+  tld: 'test',
+  sites_path: '',
+  loopback: '127.0.0.1',
+})
+
+const systemInfo = ref<SystemInfo>({
+  distro: 'Detecting...',
+  distro_version: '',
+  package_manager: 'apt',
+})
+
+const saving = ref(false)
+const saved = ref(false)
+
+onMounted(async () => {
+  try {
+    const [sitesConfig, sysInfo] = await Promise.all([
+      invoke<SitesConfig>('get_sites_config'),
+      invoke<SystemInfo>('detect_system'),
+    ])
+    config.value = sitesConfig
+    systemInfo.value = sysInfo
+  } catch (e) {
+    console.error('Failed to load config:', e)
+  }
+})
+
+async function browseSitesPath() {
+  const selected = await open({
+    directory: true,
+    multiple: false,
+    title: 'Select Sites Directory',
+  })
+  if (selected && typeof selected === 'string') {
+    config.value.sites_path = selected
+  }
+}
+
+async function saveConfig() {
+  saving.value = true
+  saved.value = false
+  try {
+    await invoke('update_sites_config', {
+      tld: config.value.tld,
+      sitesPath: config.value.sites_path,
+    })
+    saved.value = true
+    setTimeout(() => { saved.value = false }, 2000)
+  } catch (e) {
+    console.error('Failed to save config:', e)
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
   <div class="settings-page">
     <header class="page-header">
-      <h1>Settings</h1>
-      <p class="subtitle">Configure your ServerMark environment</p>
+      <div>
+        <h1>Settings</h1>
+        <p class="subtitle">Configure your ServerMark environment</p>
+      </div>
+      <button
+        class="btn btn-primary"
+        :disabled="saving"
+        @click="saveConfig"
+      >
+        {{ saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings' }}
+      </button>
     </header>
 
     <div class="settings-sections">
@@ -20,22 +97,11 @@ const configStore = useConfigStore()
             <label for="tld">Top Level Domain</label>
             <input
               id="tld"
-              v-model="configStore.config.tld"
+              v-model="config.tld"
               type="text"
               placeholder="test"
             />
-            <p class="setting-help">Sites will be accessible at *.{{ configStore.config.tld }}</p>
-          </div>
-
-          <div class="setting-item">
-            <label for="loopback">Loopback Address</label>
-            <input
-              id="loopback"
-              v-model="configStore.config.loopback"
-              type="text"
-              placeholder="127.0.0.1"
-            />
-            <p class="setting-help">IP address for local sites</p>
+            <p class="setting-help">Sites will be accessible at *.{{ config.tld }}</p>
           </div>
 
           <div class="setting-item">
@@ -43,45 +109,16 @@ const configStore = useConfigStore()
             <div class="input-with-button">
               <input
                 id="sitesPath"
-                v-model="configStore.config.sitesPath"
+                v-model="config.sites_path"
                 type="text"
                 placeholder="/home/user/Sites"
               />
-              <button class="btn btn-secondary">
+              <button class="btn btn-secondary" @click="browseSitesPath">
                 Browse
               </button>
             </div>
             <p class="setting-help">Directory where your projects are located</p>
           </div>
-        </div>
-      </section>
-
-      <!-- Web Server Settings -->
-      <section class="settings-section">
-        <h2>Web Server</h2>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input
-              v-model="configStore.config.webServer"
-              type="radio"
-              value="nginx"
-            />
-            <span class="radio-label">
-              <strong>Nginx</strong>
-              <span>Traditional, widely used web server</span>
-            </span>
-          </label>
-          <label class="radio-option">
-            <input
-              v-model="configStore.config.webServer"
-              type="radio"
-              value="caddy"
-            />
-            <span class="radio-label">
-              <strong>Caddy</strong>
-              <span>Modern, automatic HTTPS, simpler config</span>
-            </span>
-          </label>
         </div>
       </section>
 
@@ -91,11 +128,11 @@ const configStore = useConfigStore()
         <div class="info-grid">
           <div class="info-item">
             <span class="info-label">Distribution</span>
-            <span class="info-value">{{ configStore.config.distro || 'Detecting...' }}</span>
+            <span class="info-value">{{ systemInfo.distro }} {{ systemInfo.distro_version }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Package Manager</span>
-            <span class="info-value">{{ configStore.config.packageManager }}</span>
+            <span class="info-value">{{ systemInfo.package_manager }}</span>
           </div>
         </div>
       </section>
@@ -109,6 +146,9 @@ const configStore = useConfigStore()
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 32px;
 }
 
@@ -117,6 +157,20 @@ const configStore = useConfigStore()
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .subtitle {
@@ -208,47 +262,6 @@ const configStore = useConfigStore()
 
 .btn-secondary:hover {
   background: var(--color-bg-hover);
-}
-
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.radio-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.radio-option:hover {
-  border-color: var(--color-primary);
-}
-
-.radio-option input {
-  margin-top: 2px;
-}
-
-.radio-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.radio-label strong {
-  color: var(--color-text-primary);
-}
-
-.radio-label span {
-  font-size: 13px;
-  color: var(--color-text-muted);
 }
 
 .info-grid {

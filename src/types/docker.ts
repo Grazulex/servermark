@@ -8,10 +8,10 @@ export interface Container {
   id: string
   name: string
   image: string
-  status: ContainerStatus
+  status: ContainerStatus | string
   ports: PortMapping[]
   created: string
-  service: ServiceType
+  service?: ServiceType
 }
 
 export interface PortMapping {
@@ -52,8 +52,9 @@ export interface VolumeMapping {
 }
 
 export interface RuntimeInfo {
-  runtime: ContainerRuntime
+  runtime: ContainerRuntime | string
   version: string
-  apiVersion: string
+  apiVersion?: string
+  api_version?: string
   available: boolean
 }

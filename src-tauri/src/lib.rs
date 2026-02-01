@@ -10,6 +10,7 @@ mod commands;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_log::Builder::default()
@@ -118,6 +119,26 @@ pub fn run() {
             commands::get_latest_laravel_version,
             commands::upgrade_laravel,
             commands::create_laravel_project,
+            // Sites commands
+            commands::list_sites,
+            commands::add_site,
+            commands::remove_site,
+            commands::update_site_php,
+            commands::detect_site_type,
+            commands::get_sites_config,
+            commands::update_sites_config,
+            commands::get_framework_templates,
+            commands::create_project,
+            commands::clone_repository,
+            commands::secure_site,
+            commands::unsecure_site,
+            // Web server commands
+            commands::detect_web_server,
+            commands::install_web_server,
+            commands::switch_web_server,
+            commands::sync_webserver_configs,
+            commands::switch_active_webserver,
+            commands::get_active_webserver,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

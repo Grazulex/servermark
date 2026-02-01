@@ -22,3 +22,6 @@ log = "0.4"
 tauri = { version = "2.9.5", features = ["tray-icon"] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+chrono = "0.4.43"
+dirs = "6.0.0"
+tauri-plugin-dialog = "2.6.0"
