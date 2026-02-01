@@ -22,6 +22,14 @@ pub fn run() {
             commands::stop_service,
             commands::get_php_versions,
             commands::switch_php_version,
+            // Docker/Podman commands
+            commands::detect_container_runtime,
+            commands::list_containers,
+            commands::create_container,
+            commands::start_container,
+            commands::stop_container,
+            commands::remove_container,
+            commands::get_container_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

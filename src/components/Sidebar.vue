@@ -8,8 +8,8 @@ const servicesStore = useServicesStore()
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/services', label: 'Services', icon: 'services' },
   { path: '/sites', label: 'Sites', icon: 'sites' },
+  { path: '/containers', label: 'Containers', icon: 'containers' },
   { path: '/php', label: 'PHP', icon: 'php' },
   { path: '/settings', label: 'Settings', icon: 'settings' },
 ]

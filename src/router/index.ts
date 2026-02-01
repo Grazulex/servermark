@@ -25,6 +25,11 @@ const router = createRouter({
       component: () => import('@/views/Php.vue'),
     },
     {
+      path: '/containers',
+      name: 'containers',
+      component: () => import('@/views/Containers.vue'),
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/Settings.vue'),
