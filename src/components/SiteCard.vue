@@ -115,132 +115,127 @@ const hasLaravelUpdate = computed(() => {
     </div>
 
     <div class="site-actions">
-      <button
-        class="btn btn-icon btn-primary"
-        @click="emit('open')"
-        title="Open in browser"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-          <polyline points="15 3 21 3 21 9"/>
-          <line x1="10" y1="14" x2="21" y2="3"/>
-        </svg>
-      </button>
-      <button
-        class="btn btn-icon btn-secondary"
-        @click="emit('terminal')"
-        title="Open terminal"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="4 17 10 11 4 5"/>
-          <line x1="12" y1="19" x2="20" y2="19"/>
-        </svg>
-      </button>
-      <button
-        v-if="!site.secured"
-        class="btn btn-icon btn-success"
-        @click="emit('secure')"
-        title="Enable HTTPS"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-      </button>
-      <button
-        v-else
-        class="btn btn-icon btn-secondary"
-        @click="emit('unsecure')"
-        title="Disable HTTPS"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
-        </svg>
-      </button>
-      <button
-        v-if="site.site_type === 'laravel'"
-        class="btn btn-icon btn-secondary"
-        @click="emit('fixPermissions')"
-        title="Fix Laravel permissions"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      </button>
-      <button
-        v-if="site.site_type === 'laravel'"
-        class="btn btn-icon"
-        :class="site.laravel?.scheduler_enabled ? 'btn-success' : 'btn-secondary'"
-        @click="emit('toggleScheduler')"
-        :title="site.laravel?.scheduler_enabled ? 'Disable scheduler' : 'Enable scheduler'"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </button>
-      <button
-        v-if="site.site_type === 'laravel'"
-        class="btn btn-icon"
-        :class="site.laravel?.queue_enabled ? 'btn-success' : 'btn-secondary'"
-        @click="emit('toggleQueue')"
-        :title="site.laravel?.queue_enabled ? 'Stop queue worker' : 'Start queue worker'"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/>
-          <line x1="8" y1="12" x2="21" y2="12"/>
-          <line x1="8" y1="18" x2="21" y2="18"/>
-          <line x1="3" y1="6" x2="3.01" y2="6"/>
-          <line x1="3" y1="12" x2="3.01" y2="12"/>
-          <line x1="3" y1="18" x2="3.01" y2="18"/>
-        </svg>
-      </button>
-      <button
-        v-if="site.site_type === 'laravel'"
-        class="btn btn-icon btn-secondary"
-        @click="emit('viewLogs')"
-        title="View logs"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </button>
-      <button
-        v-if="hasLaravelUpdate"
-        class="btn btn-icon btn-warning"
-        @click="emit('upgradeLaravel')"
-        title="Upgrade Laravel"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="19" x2="12" y2="5"/>
-          <polyline points="5 12 12 5 19 12"/>
-        </svg>
-      </button>
-      <button
-        class="btn btn-icon btn-secondary"
-        @click="emit('settings')"
-        title="Site settings"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
-      <button
-        class="btn btn-icon btn-danger-outline"
-        @click="emit('remove')"
-        title="Remove site"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-        </svg>
-      </button>
+      <!-- Toggle buttons (activation switches) -->
+      <div class="actions-toggles">
+        <button
+          class="btn btn-icon"
+          :class="site.secured ? 'btn-success' : 'btn-secondary'"
+          @click="site.secured ? emit('unsecure') : emit('secure')"
+          :title="site.secured ? 'Disable HTTPS' : 'Enable HTTPS'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </button>
+        <button
+          v-if="site.site_type === 'laravel'"
+          class="btn btn-icon"
+          :class="site.laravel?.scheduler_enabled ? 'btn-success' : 'btn-secondary'"
+          @click="emit('toggleScheduler')"
+          :title="site.laravel?.scheduler_enabled ? 'Disable scheduler' : 'Enable scheduler'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+        <button
+          v-if="site.site_type === 'laravel'"
+          class="btn btn-icon"
+          :class="site.laravel?.queue_enabled ? 'btn-success' : 'btn-secondary'"
+          @click="emit('toggleQueue')"
+          :title="site.laravel?.queue_enabled ? 'Stop queue worker' : 'Start queue worker'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <!-- Action buttons -->
+      <div class="actions-buttons">
+        <button
+          class="btn btn-icon btn-primary"
+          @click="emit('open')"
+          title="Open in browser"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </button>
+        <button
+          class="btn btn-icon btn-secondary"
+          @click="emit('terminal')"
+          title="Open terminal"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </button>
+        <button
+          v-if="site.site_type === 'laravel'"
+          class="btn btn-icon btn-secondary"
+          @click="emit('viewLogs')"
+          title="View logs"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </button>
+        <button
+          v-if="site.site_type === 'laravel'"
+          class="btn btn-icon btn-secondary"
+          @click="emit('fixPermissions')"
+          title="Fix Laravel permissions"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </button>
+        <button
+          v-if="hasLaravelUpdate"
+          class="btn btn-icon btn-warning"
+          @click="emit('upgradeLaravel')"
+          title="Upgrade Laravel"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
+        <button
+          class="btn btn-icon btn-secondary"
+          @click="emit('settings')"
+          title="Site settings"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button
+          class="btn btn-icon btn-danger-outline"
+          @click="emit('remove')"
+          title="Remove site"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -403,9 +398,15 @@ const hasLaravelUpdate = computed(() => {
 
 .site-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+}
+
+.actions-toggles,
+.actions-buttons {
+  display: flex;
+  gap: 8px;
 }
 
 .btn {
