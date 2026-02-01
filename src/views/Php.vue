@@ -153,37 +153,48 @@ async function handleUninstall(version: string) {
         <div class="php-actions">
           <template v-if="!php.installed">
             <button
-              class="btn btn-primary"
+              class="btn btn-icon btn-primary"
               :disabled="phpStore.loading || phpStore.installing"
+              title="Install"
               @click="openInstallModal(php.version)"
             >
-              {{ phpStore.installing ? 'Installing...' : 'Install' }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </button>
           </template>
           <template v-else>
-            <div class="actions-row">
-              <button
-                v-if="!php.active"
-                class="btn btn-success"
-                :disabled="phpStore.loading || phpStore.uninstalling"
-                @click="handleSwitch(php.version)"
-              >
-                {{ phpStore.loading ? 'Switching...' : 'Set Active' }}
-              </button>
-              <span
-                v-else
-                class="active-label"
-              >
-                Currently Active
-              </span>
-            </div>
             <button
               v-if="!php.active"
-              class="btn btn-danger btn-sm"
+              class="btn btn-icon btn-success"
+              :disabled="phpStore.loading || phpStore.uninstalling"
+              title="Set Active"
+              @click="handleSwitch(php.version)"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </button>
+            <span
+              v-else
+              class="active-label"
+            >
+              Currently Active
+            </span>
+            <button
+              v-if="!php.active"
+              class="btn btn-icon btn-danger-outline"
               :disabled="phpStore.uninstalling"
+              title="Uninstall"
               @click="handleUninstall(php.version)"
             >
-              {{ phpStore.uninstalling ? 'Removing...' : 'Uninstall' }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
             </button>
           </template>
         </div>
@@ -363,12 +374,11 @@ async function handleUninstall(version: string) {
 }
 
 .php-card.active {
-  border-color: var(--color-success);
-  background: linear-gradient(135deg, var(--color-bg-secondary), rgba(34, 197, 94, 0.05));
+  border-left: 3px solid var(--color-success);
 }
 
 .php-card.installed:not(.active) {
-  border-color: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
 }
 
 .php-header {
@@ -423,17 +433,11 @@ async function handleUninstall(version: string) {
 
 .php-actions {
   display: flex;
-  flex-direction: column;
   gap: 8px;
-}
-
-.actions-row {
-  display: flex;
-  gap: 8px;
+  justify-content: flex-end;
 }
 
 .btn {
-  flex: 1;
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 13px;
@@ -441,6 +445,19 @@ async function handleUninstall(version: string) {
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  flex-shrink: 0;
 }
 
 .btn:disabled {
@@ -475,6 +492,17 @@ async function handleUninstall(version: string) {
   background: #dc2626;
 }
 
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
@@ -490,12 +518,12 @@ async function handleUninstall(version: string) {
 }
 
 .active-label {
-  flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
   color: var(--color-success);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 10px;
+  height: 36px;
 }
 
 .empty-state {

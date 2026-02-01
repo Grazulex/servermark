@@ -220,40 +220,62 @@ async function copyAllEnv() {
     <div class="container-actions">
       <button
         v-if="canStart"
-        class="btn btn-success"
+        class="btn btn-icon btn-success"
         :disabled="isLoading"
+        title="Start"
         @click="emit('start')"
       >
-        Start
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
       </button>
       <button
         v-if="canStop"
-        class="btn btn-warning"
+        class="btn btn-icon btn-warning"
         :disabled="isLoading"
+        title="Stop"
         @click="emit('stop')"
       >
-        Stop
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
+        </svg>
       </button>
       <button
         v-if="canStop"
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
         :disabled="isLoading"
+        title="Restart"
         @click="emit('restart')"
       >
-        Restart
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
       </button>
       <button
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
+        title="Logs"
         @click="emit('logs')"
       >
-        Logs
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
       </button>
       <button
-        class="btn btn-danger-outline"
+        class="btn btn-icon btn-danger-outline"
         :disabled="isLoading || container.status === 'running'"
+        title="Remove"
         @click="emit('remove')"
       >
-        Remove
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -370,6 +392,7 @@ async function copyAllEnv() {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .btn {
@@ -385,6 +408,19 @@ async function copyAllEnv() {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  flex-shrink: 0;
 }
 
 .btn-success {

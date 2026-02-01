@@ -13,6 +13,7 @@ const emit = defineEmits<{
   secure: []
   unsecure: []
   upgradeLaravel: []
+  fixPermissions: []
   remove: []
 }>()
 
@@ -44,7 +45,7 @@ const hasLaravelUpdate = computed(() => {
 </script>
 
 <template>
-  <div class="site-card">
+  <div class="site-card" :class="{ secured: site.secured }">
     <div class="site-header">
       <div
         class="site-icon"
@@ -112,51 +113,88 @@ const hasLaravelUpdate = computed(() => {
 
     <div class="site-actions">
       <button
-        class="btn btn-primary"
+        class="btn btn-icon btn-primary"
         @click="emit('open')"
+        title="Open in browser"
       >
-        Open
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
       </button>
       <button
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
         @click="emit('terminal')"
-        title="Open terminal in project folder"
+        title="Open terminal"
       >
-        Terminal
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 17 10 11 4 5"/>
+          <line x1="12" y1="19" x2="20" y2="19"/>
+        </svg>
       </button>
       <button
         v-if="!site.secured"
-        class="btn btn-success"
+        class="btn btn-icon btn-success"
         @click="emit('secure')"
+        title="Enable HTTPS"
       >
-        Secure
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
       </button>
       <button
         v-else
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
         @click="emit('unsecure')"
+        title="Disable HTTPS"
       >
-        Unsecure
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+        </svg>
+      </button>
+      <button
+        v-if="site.site_type === 'laravel'"
+        class="btn btn-icon btn-secondary"
+        @click="emit('fixPermissions')"
+        title="Fix Laravel permissions"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
       </button>
       <button
         v-if="hasLaravelUpdate"
-        class="btn btn-warning"
+        class="btn btn-icon btn-warning"
         @click="emit('upgradeLaravel')"
+        title="Upgrade Laravel"
       >
-        Upgrade Laravel
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="19" x2="12" y2="5"/>
+          <polyline points="5 12 12 5 19 12"/>
+        </svg>
       </button>
       <button
-        class="btn btn-secondary"
+        class="btn btn-icon btn-secondary"
         @click="emit('settings')"
+        title="Site settings"
       >
-        Settings
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
       </button>
       <button
-        class="btn btn-danger-outline"
+        class="btn btn-icon btn-danger-outline"
         @click="emit('remove')"
-        title="Remove from ServerMark (files are kept)"
+        title="Remove site"
       >
-        Remove
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -173,6 +211,14 @@ const hasLaravelUpdate = computed(() => {
 
 .site-card:hover {
   border-color: var(--color-border-hover);
+}
+
+.site-card.secured {
+  border-left: 3px solid var(--color-success);
+}
+
+.site-card:not(.secured) {
+  border-left: 3px solid var(--color-text-muted);
 }
 
 .site-header {
@@ -314,6 +360,7 @@ const hasLaravelUpdate = computed(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .btn {
@@ -324,6 +371,19 @@ const hasLaravelUpdate = computed(() => {
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  flex-shrink: 0;
 }
 
 .btn-primary {
