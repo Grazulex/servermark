@@ -1,6 +1,10 @@
 <script setup lang="ts">
 // ServerMark - Main Application Component
 import Sidebar from '@/components/Sidebar.vue'
+import { useTrayEvents } from '@/composables/useTrayEvents'
+
+// Setup tray event listeners
+useTrayEvents()
 </script>
 
 <template>

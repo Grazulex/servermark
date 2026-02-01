@@ -33,7 +33,7 @@ validations:
     warn_missing_ai_review: true
     warn_early_close: true
     warn_late_close: true
-    warn_quick_close: 300
+    warn_quick_close: 0
     suggest_parent_close: true
     notify_unblocked: true
     allow_force: true
