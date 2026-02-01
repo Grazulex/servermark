@@ -132,6 +132,7 @@ pub fn run() {
             commands::clone_repository,
             commands::secure_site,
             commands::unsecure_site,
+            commands::fix_laravel_permissions,
             // Web server commands
             commands::detect_web_server,
             commands::install_web_server,

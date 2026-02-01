@@ -408,29 +408,6 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- Quick Actions -->
-    <section class="section">
-      <h2>Quick Actions</h2>
-      <div class="actions-grid">
-        <router-link to="/sites" class="action-btn">
-          <span class="action-icon">+</span>
-          <span class="action-label">Add Site</span>
-        </router-link>
-        <router-link to="/php" class="action-btn">
-          <span class="action-icon">P</span>
-          <span class="action-label">Install PHP</span>
-        </router-link>
-        <router-link to="/settings" class="action-btn">
-          <span class="action-icon">C</span>
-          <span class="action-label">Settings</span>
-        </router-link>
-        <router-link to="/containers" class="action-btn">
-          <span class="action-icon">D</span>
-          <span class="action-label">Containers</span>
-        </router-link>
-      </div>
-    </section>
-
     <!-- Logs Modal -->
     <Teleport to="body">
       <div v-if="showLogsModal" class="modal-overlay" @click.self="closeLogsModal">
@@ -534,54 +511,6 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-}
-
-.actions-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 20px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.action-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-}
-
-.action-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-tertiary);
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.action-btn:hover .action-icon {
-  background: var(--color-primary);
-  color: white;
-}
-
-.action-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-primary);
 }
 
 /* Containers */

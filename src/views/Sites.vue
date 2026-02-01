@@ -151,6 +151,16 @@ async function openTerminal(path: string) {
   }
 }
 
+async function fixPermissions(path: string) {
+  try {
+    await invoke('fix_laravel_permissions', { path })
+    alert('Permissions fixed successfully!')
+  } catch (e) {
+    console.error('Failed to fix permissions:', e)
+    alert(`Failed to fix permissions: ${e}`)
+  }
+}
+
 function openSettings(site: Site) {
   editingSite.value = site
   editPhpVersion.value = site.php_version
@@ -216,6 +226,7 @@ async function saveSettings() {
         @secure="sitesStore.secureSite(site.id)"
         @unsecure="sitesStore.unsecureSite(site.id)"
         @settings="openSettings(site)"
+        @fix-permissions="fixPermissions(site.path)"
         @upgrade-laravel="() => {}"
         @remove="sitesStore.removeSite(site.id)"
       />
@@ -509,6 +520,21 @@ async function saveSettings() {
                   </option>
                 </select>
               </div>
+
+              <!-- Laravel-specific actions -->
+              <div v-if="editingSite?.site_type === 'laravel'" class="form-field">
+                <label>Laravel Actions</label>
+                <button
+                  class="btn btn-secondary btn-block"
+                  @click="fixPermissions(editingSite!.path)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  Fix Storage Permissions
+                </button>
+                <small>Fixes storage/ and bootstrap/cache permissions for www-data</small>
+              </div>
             </div>
           </div>
 
@@ -593,6 +619,13 @@ async function saveSettings() {
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-bg-hover);
+}
+
+.btn-block {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-state {

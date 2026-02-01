@@ -167,11 +167,13 @@ pub fn add_site(path: String, name: Option<String>, php_version: Option<String>)
         laravel,
     };
 
-    // Update .env file for Laravel projects
+    // Update .env file and fix permissions for Laravel projects
     if matches!(site.site_type, SiteType::Laravel) {
         update_laravel_env(&site)?;
         // Fix Docker hostnames (mysql -> 127.0.0.1, redis -> 127.0.0.1, etc.)
         let _ = super::webserver::fix_docker_hostnames_in_env(&site.path);
+        // Fix storage/cache permissions
+        let _ = fix_laravel_permissions_internal(&site.path);
     }
 
     config.sites.push(site.clone());
@@ -265,6 +267,86 @@ pub fn update_site_php(id: String, php_version: String) -> Result<Site, String> 
     } else {
         Err("Site not found".to_string())
     }
+}
+
+/// Fix Laravel permissions for storage and bootstrap/cache directories
+#[tauri::command]
+pub fn fix_laravel_permissions(path: String) -> Result<(), String> {
+    let site_path = Path::new(&path);
+
+    if !site_path.exists() {
+        return Err("Path does not exist".to_string());
+    }
+
+    // Check if it's a Laravel project
+    if !site_path.join("artisan").exists() {
+        return Err("Not a Laravel project".to_string());
+    }
+
+    let storage_path = site_path.join("storage");
+    let cache_path = site_path.join("bootstrap/cache");
+
+    // Get current user
+    let current_user = std::env::var("USER").unwrap_or_else(|_| "www-data".to_string());
+
+    // Script to fix permissions - uses pkexec for single password prompt
+    let script = format!(
+        r#"
+set -e
+
+# Fix storage directory
+if [ -d "{storage}" ]; then
+    chown -R {user}:www-data "{storage}"
+    chmod -R 775 "{storage}"
+    find "{storage}" -type d -exec chmod 775 {{}} \;
+    find "{storage}" -type f -exec chmod 664 {{}} \;
+fi
+
+# Fix bootstrap/cache directory
+if [ -d "{cache}" ]; then
+    chown -R {user}:www-data "{cache}"
+    chmod -R 775 "{cache}"
+fi
+
+# Ensure directories exist
+mkdir -p "{storage}/app/public"
+mkdir -p "{storage}/framework/cache"
+mkdir -p "{storage}/framework/sessions"
+mkdir -p "{storage}/framework/views"
+mkdir -p "{storage}/logs"
+mkdir -p "{cache}"
+
+# Set permissions on newly created dirs
+chown -R {user}:www-data "{storage}"
+chown -R {user}:www-data "{cache}"
+chmod -R 775 "{storage}"
+chmod -R 775 "{cache}"
+
+echo "Permissions fixed successfully"
+"#,
+        storage = storage_path.display(),
+        cache = cache_path.display(),
+        user = current_user
+    );
+
+    let output = Command::new("pkexec")
+        .args(["bash", "-c", &script])
+        .output()
+        .map_err(|e| format!("Failed to fix permissions: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "Failed to fix permissions: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    Ok(())
+}
+
+/// Internal function to fix permissions (called during site creation)
+pub fn fix_laravel_permissions_internal(path: &str) -> Result<(), String> {
+    fix_laravel_permissions(path.to_string())
 }
 
 /// Get sites configuration (tld, sites_path)

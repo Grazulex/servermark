@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useServicesStore } from '@/stores'
+import { useDockerStore } from '@/stores/docker'
 
 const route = useRoute()
-const servicesStore = useServicesStore()
+const dockerStore = useDockerStore()
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
@@ -18,8 +18,13 @@ const navItems = [
 const isActive = (path: string) => route.path === path
 
 const statusIndicator = computed(() => {
-  if (servicesStore.runningCount === 0) return 'stopped'
-  if (servicesStore.stoppedCount === 0) return 'running'
+  const running = dockerStore.runningContainers.length
+  const stopped = dockerStore.stoppedContainers.length
+  const total = dockerStore.containers.length
+
+  if (total === 0) return 'stopped'
+  if (running === 0) return 'stopped'
+  if (stopped === 0) return 'running'
   return 'partial'
 })
 </script>
