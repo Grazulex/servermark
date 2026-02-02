@@ -30,13 +30,43 @@ ServerMark is a desktop application for managing local development environments 
 
 ## Features
 
-- **Service Management** - Start/stop MySQL, PostgreSQL, Redis, Mailpit, etc.
-- **Container Support** - Run services in Docker/Podman containers
-- **Multiple PHP Versions** - Install and switch between PHP versions
-- **Site Management** - Configure local development sites with custom domains
-- **Laravel Integration** - Detect and manage Laravel versions per project
-- **SSL Certificates** - Automatic HTTPS for local sites
+### Web Server
+- **Caddy/Nginx Support** - Install and manage web servers
+- **Automatic SSL** - One-click HTTPS for local sites via mkcert
+- **Custom Domains** - Use `.test` or any TLD for local development
+
+### Site Management
+- **Multi-type Sites** - Laravel, Symfony, WordPress, Static, Proxy
+- **PHP Version per Site** - Assign specific PHP version to each site
+- **Auto-detection** - Automatically detects project type and framework version
+
+### Laravel Integration
+- **Version Detection** - Shows current and latest Laravel version
+- **Scheduler Management** - Enable/disable Laravel scheduler via crontab
+- **Queue Worker** - Start/stop queue workers via systemd user services
+- **Logs Viewer** - View scheduler and queue worker logs in real-time
+- **Permissions Fix** - One-click fix for storage/cache permissions
+- **Upgrade Notifications** - Get notified when Laravel updates are available
+
+### Container Services (Docker/Podman)
+- **Database Servers** - MySQL, MariaDB, PostgreSQL, MongoDB
+- **Caching** - Redis, Memcached
+- **Tools** - Mailpit, MinIO, Adminer
+- **Easy Management** - Start/stop/restart with connection info
+
+### Database Management
+- **Create Databases** - Create databases on MySQL/PostgreSQL containers
+- **Connection Info** - Quick access to credentials and connection strings
+
+### PHP Management
+- **Multiple Versions** - PHP 8.4, 8.3, 8.2, 8.1, 8.0, 7.4, 7.3, 7.2
+- **One-click Install** - Install PHP versions with extension selection
+- **Global Switch** - Change active PHP version system-wide
+
+### System
 - **System Tray** - Quick access from the system tray
+- **Multi-distro Support** - Ubuntu, Debian, Fedora, Arch, and more
+- **Native Integration** - Uses system package manager (apt, dnf, pacman)
 
 ## Tech Stack
 
@@ -106,32 +136,46 @@ npm run check
 npm run format
 ```
 
-## Services
+## Supported Site Types
+
+| Type | Description |
+|------|-------------|
+| Laravel | Full Laravel support with scheduler, queue, logs |
+| Symfony | Symfony framework projects |
+| WordPress | WordPress installations |
+| Static | Static HTML/CSS/JS sites |
+| Proxy | Reverse proxy to another URL |
+
+## Container Services
 
 ServerMark supports the following services via Docker/Podman:
 
 | Service | Versions | Default Port |
 |---------|----------|--------------|
-| MySQL | 8.0, 8.4, 5.7 | 3306 |
+| MySQL | 8.4, 8.0, 5.7 | 3306 |
+| MariaDB | 11, 10 | 3306 |
 | PostgreSQL | 16, 15, 14, 13 | 5432 |
-| Redis | 7, 6 | 6379 |
-| Mailpit | latest | 8025 |
-| MinIO | latest | 9000 |
 | MongoDB | 7, 6, 5 | 27017 |
+| Redis | 7, 6 | 6379 |
 | Memcached | latest | 11211 |
+| Mailpit | latest | 8025 |
+| MinIO | latest | 9000/9001 |
 | Adminer | latest | 8080 |
 
 ## PHP Versions
 
-Supported PHP versions:
-- PHP 8.4
-- PHP 8.3
-- PHP 8.2
-- PHP 8.1
-- PHP 8.0
-- PHP 7.4
-- PHP 7.3
-- PHP 7.2
+Supported PHP versions (installed via system package manager):
+
+| Version | Status |
+|---------|--------|
+| PHP 8.4 | Latest |
+| PHP 8.3 | LTS |
+| PHP 8.2 | LTS |
+| PHP 8.1 | Security fixes |
+| PHP 8.0 | EOL |
+| PHP 7.4 | EOL |
+| PHP 7.3 | EOL |
+| PHP 7.2 | EOL |
 
 ## License
 
