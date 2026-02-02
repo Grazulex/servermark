@@ -2,13 +2,31 @@
 
 Local development environment manager for Linux - A Herd/Valet alternative.
 
+![Beta](https://img.shields.io/badge/Status-Beta-yellow)
 ![ServerMark](https://img.shields.io/badge/Platform-Linux-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-2.x-orange)
 ![Vue](https://img.shields.io/badge/Vue-3.x-green)
 
+> **Warning**
+> This is a **beta version**. Features may be incomplete or change without notice. Use at your own risk in development environments only.
+
 ## Overview
 
 ServerMark is a desktop application for managing local development environments on Linux. It provides an easy-to-use graphical interface for managing services, PHP versions, and development sites.
+
+## Screenshots
+
+### Dashboard
+![Dashboard](public/images/dashboard.png)
+
+### Sites Management
+![Sites](public/images/sites.png)
+
+### Containers (Docker)
+![Containers](public/images/containers.png)
+
+### PHP Versions
+![PHP](public/images/php.png)
 
 ## Features
 
@@ -106,11 +124,14 @@ ServerMark supports the following services via Docker/Podman:
 ## PHP Versions
 
 Supported PHP versions:
+- PHP 8.4
 - PHP 8.3
 - PHP 8.2
 - PHP 8.1
 - PHP 8.0
 - PHP 7.4
+- PHP 7.3
+- PHP 7.2
 
 ## License
 
