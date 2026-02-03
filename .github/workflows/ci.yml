@@ -31,6 +31,9 @@ jobs:
       - name: Run TypeScript check
         run: npm run check
 
+      - name: Run tests
+        run: npm run test
+
   check-rust:
     name: Check Rust
     runs-on: ubuntu-22.04
@@ -63,3 +66,7 @@ jobs:
       - name: Run cargo fmt check
         working-directory: src-tauri
         run: cargo fmt --check
+
+      - name: Run cargo test
+        working-directory: src-tauri
+        run: cargo test --all-features
