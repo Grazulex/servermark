@@ -33,9 +33,7 @@ describe('Sites Store', () => {
         domain: 'test.test',
         php_version: '8.3',
         secured: false,
-        site_type: 'php',
-        proxy_target: null,
-        laravel: null,
+        site_type: 'static',
       },
       {
         id: '2',
@@ -45,8 +43,6 @@ describe('Sites Store', () => {
         php_version: '8.2',
         secured: true,
         site_type: 'laravel',
-        proxy_target: null,
-        laravel: null,
       },
     ]
 
@@ -64,9 +60,7 @@ describe('Sites Store', () => {
         domain: 'test.test',
         php_version: '8.3',
         secured: false,
-        site_type: 'php',
-        proxy_target: null,
-        laravel: null,
+        site_type: 'static',
       },
       {
         id: '2',
@@ -76,8 +70,6 @@ describe('Sites Store', () => {
         php_version: '8.2',
         secured: true,
         site_type: 'laravel',
-        proxy_target: null,
-        laravel: null,
       },
     ]
 
