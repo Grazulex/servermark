@@ -227,8 +227,9 @@ export const useSitesStore = defineStore('sites', () => {
       })
       // Update local state
       const siteIndex = sites.value.findIndex(s => s.id === site.id)
-      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
-        sites.value[siteIndex].laravel!.scheduler_enabled = true
+      const siteToUpdate = sites.value[siteIndex]
+      if (siteIndex !== -1 && siteToUpdate?.laravel) {
+        siteToUpdate.laravel.scheduler_enabled = true
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to enable scheduler'
@@ -245,8 +246,9 @@ export const useSitesStore = defineStore('sites', () => {
       await invoke('disable_scheduler', { sitePath: site.path })
       // Update local state
       const siteIndex = sites.value.findIndex(s => s.id === site.id)
-      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
-        sites.value[siteIndex].laravel!.scheduler_enabled = false
+      const siteToUpdate = sites.value[siteIndex]
+      if (siteIndex !== -1 && siteToUpdate?.laravel) {
+        siteToUpdate.laravel.scheduler_enabled = false
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to disable scheduler'
@@ -284,8 +286,9 @@ export const useSitesStore = defineStore('sites', () => {
       })
       // Update local state
       const siteIndex = sites.value.findIndex(s => s.id === site.id)
-      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
-        sites.value[siteIndex].laravel!.queue_enabled = true
+      const siteToUpdate = sites.value[siteIndex]
+      if (siteIndex !== -1 && siteToUpdate?.laravel) {
+        siteToUpdate.laravel.queue_enabled = true
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to start queue worker'
@@ -302,8 +305,9 @@ export const useSitesStore = defineStore('sites', () => {
       await invoke('stop_queue_worker', { sitePath: site.path })
       // Update local state
       const siteIndex = sites.value.findIndex(s => s.id === site.id)
-      if (siteIndex !== -1 && sites.value[siteIndex].laravel) {
-        sites.value[siteIndex].laravel!.queue_enabled = false
+      const siteToUpdate = sites.value[siteIndex]
+      if (siteIndex !== -1 && siteToUpdate?.laravel) {
+        siteToUpdate.laravel.queue_enabled = false
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to stop queue worker'
