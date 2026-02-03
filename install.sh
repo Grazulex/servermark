@@ -313,6 +313,8 @@ main() {
     if [ ! -f "$pkg_file" ]; then
         error "Download failed. Please check your internet connection."
     fi
+    # Make package readable by all (fixes apt sandbox warning)
+    chmod 644 "$pkg_file"
     success "Download complete"
 
     # Install based on package type
