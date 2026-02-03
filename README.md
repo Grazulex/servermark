@@ -83,6 +83,35 @@ ServerMark is a desktop application for managing local development environments 
 
 ## Installation
 
+### Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Grazulex/servermark/main/install.sh | sudo bash
+```
+
+Or with wget:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/Grazulex/servermark/main/install.sh | sudo bash
+```
+
+The script automatically detects your distribution and installs the appropriate package:
+
+| Distribution | Package |
+|--------------|---------|
+| Ubuntu, Debian, Linux Mint, Pop!_OS | `.deb` |
+| Fedora, RHEL, CentOS, Rocky Linux | `.rpm` |
+| Arch, Manjaro, EndeavourOS | `.AppImage` |
+| Other | `.AppImage` (fallback) |
+
+### Manual Download
+
+Download the latest release from [GitHub Releases](https://github.com/Grazulex/servermark/releases):
+
+- **Ubuntu/Debian**: `ServerMark_x.x.x_amd64.deb`
+- **Fedora/RHEL**: `ServerMark-x.x.x-1.x86_64.rpm`
+- **Other Linux**: `ServerMark_x.x.x_amd64.AppImage`
+
 ### From Source
 
 ```bash
