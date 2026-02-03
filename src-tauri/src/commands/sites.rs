@@ -756,3 +756,50 @@ pub fn unsecure_site(id: String) -> Result<Site, String> {
         Err("Site not found".to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sites_config_default() {
+        let config = SitesConfig::default();
+        assert_eq!(config.tld, "test");
+        assert!(config.sites.is_empty());
+    }
+
+    #[test]
+    fn test_site_type_serialization() {
+        let laravel = SiteType::Laravel;
+        let json = serde_json::to_string(&laravel).unwrap();
+        assert_eq!(json, "\"laravel\"");
+
+        let wordpress = SiteType::WordPress;
+        let json = serde_json::to_string(&wordpress).unwrap();
+        assert_eq!(json, "\"wordpress\"");
+    }
+
+    #[test]
+    fn test_site_serialization() {
+        let site = Site {
+            id: "test-1".to_string(),
+            name: "test-site".to_string(),
+            path: "/var/www/test".to_string(),
+            domain: "test.test".to_string(),
+            php_version: "8.3".to_string(),
+            secured: false,
+            site_type: SiteType::Laravel,
+            proxy_target: None,
+            laravel: Some(LaravelInfo {
+                detected: true,
+                version: Some("11.0".to_string()),
+                constraint: Some("^11.0".to_string()),
+                php_version: Some("8.2".to_string()),
+            }),
+        };
+
+        let json = serde_json::to_string(&site).unwrap();
+        assert!(json.contains("\"name\":\"test-site\""));
+        assert!(json.contains("\"site_type\":\"laravel\""));
+    }
+}
