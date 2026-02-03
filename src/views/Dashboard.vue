@@ -119,7 +119,7 @@ async function controlService(service: string, action: 'start' | 'stop' | 'resta
   try {
     await invoke('control_native_service', { service, action })
     await detectNativeServices()
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(`Failed to ${action} ${service}:`, e)
     alert(`Failed to ${action} ${service}: ${e}`)
   } finally {

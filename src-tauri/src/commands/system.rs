@@ -25,7 +25,10 @@ pub fn detect_system() -> Result<SystemInfo, String> {
             distro = line.trim_start_matches("ID=").trim_matches('"').to_string();
         }
         if line.starts_with("VERSION_ID=") {
-            distro_version = line.trim_start_matches("VERSION_ID=").trim_matches('"').to_string();
+            distro_version = line
+                .trim_start_matches("VERSION_ID=")
+                .trim_matches('"')
+                .to_string();
         }
     }
 
@@ -36,7 +39,8 @@ pub fn detect_system() -> Result<SystemInfo, String> {
         "arch" | "manjaro" | "endeavouros" => "pacman",
         "opensuse" | "opensuse-leap" | "opensuse-tumbleweed" => "zypper",
         _ => "unknown",
-    }.to_string();
+    }
+    .to_string();
 
     // Get kernel version
     let kernel = Command::new("uname")
@@ -163,7 +167,8 @@ fn install_caddy(package_manager: &str) -> Result<(), String> {
 
     // Complete setup script - runs with single pkexec prompt
     // Uses /etc/caddy/sites.d/ which Caddy can access (unlike user's home)
-    let setup_script = format!(r##"
+    let setup_script = format!(
+        r##"
 set -e
 
 # 1. Install Caddy
@@ -199,7 +204,9 @@ fi
 # 6. Enable and start Caddy
 systemctl enable caddy
 systemctl restart caddy
-"##, install_cmd = install_cmd);
+"##,
+        install_cmd = install_cmd
+    );
 
     let output = Command::new("pkexec")
         .args(["bash", "-c", &setup_script])
@@ -225,12 +232,15 @@ fn install_nginx(package_manager: &str) -> Result<(), String> {
         _ => return Err("Unsupported package manager".to_string()),
     };
 
-    let setup_script = format!(r#"
+    let setup_script = format!(
+        r#"
 set -e
 {install_cmd}
 systemctl enable nginx
 systemctl start nginx
-"#, install_cmd = install_cmd);
+"#,
+        install_cmd = install_cmd
+    );
 
     let output = Command::new("pkexec")
         .args(["bash", "-c", &setup_script])
@@ -284,7 +294,7 @@ pub fn switch_web_server(server: String) -> Result<(), String> {
 pub struct DnsStatus {
     pub dnsmasq_installed: bool,
     pub dnsmasq_running: bool,
-    pub dnsmasq_configured: bool, // Has .test domain config
+    pub dnsmasq_configured: bool,  // Has .test domain config
     pub resolver_configured: bool, // systemd-resolved configured
 }
 
@@ -306,8 +316,10 @@ pub fn detect_dns() -> DnsStatus {
         || Command::new("ss")
             .args(["-tlnp"])
             .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).contains(":5353")
-                  && String::from_utf8_lossy(&o.stdout).contains("dnsmasq"))
+            .map(|o| {
+                String::from_utf8_lossy(&o.stdout).contains(":5353")
+                    && String::from_utf8_lossy(&o.stdout).contains("dnsmasq")
+            })
             .unwrap_or(false);
 
     // Check if .test domain is configured in dnsmasq (ServerMark config or any other)
@@ -316,12 +328,14 @@ pub fn detect_dns() -> DnsStatus {
         .unwrap_or(false)
         || fs::read_dir("/etc/dnsmasq.d")
             .map(|entries| {
-                entries.filter_map(|e| e.ok())
-                    .any(|entry| {
-                        fs::read_to_string(entry.path())
-                            .map(|content| content.contains("address=/.test/") || content.contains("address=/test/"))
-                            .unwrap_or(false)
-                    })
+                entries.filter_map(|e| e.ok()).any(|entry| {
+                    fs::read_to_string(entry.path())
+                        .map(|content| {
+                            content.contains("address=/.test/")
+                                || content.contains("address=/test/")
+                        })
+                        .unwrap_or(false)
+                })
             })
             .unwrap_or(false);
 
@@ -350,7 +364,8 @@ pub fn install_dns(package_manager: String) -> Result<(), String> {
 
     // Robust DNS setup script that works with systemd-resolved
     // Strategy: Use dnsmasq on port 5353, forward via systemd-resolved
-    let setup_script = format!(r##"
+    let setup_script = format!(
+        r##"
 set -e
 
 echo "=== ServerMark DNS Setup ==="
@@ -440,7 +455,9 @@ fi
 echo ""
 echo "=== Setup Complete ==="
 echo "All *.test domains will now resolve to 127.0.0.1"
-"##, install_cmd = install_cmd);
+"##,
+        install_cmd = install_cmd
+    );
 
     let output = Command::new("pkexec")
         .args(["bash", "-c", &setup_script])
@@ -450,10 +467,7 @@ echo "All *.test domains will now resolve to 127.0.0.1"
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
-        return Err(format!(
-            "Failed to install DNS:\n{}\n{}",
-            stdout, stderr
-        ));
+        return Err(format!("Failed to install DNS:\n{}\n{}", stdout, stderr));
     }
 
     Ok(())
@@ -622,7 +636,9 @@ pub fn control_native_service(service: String, action: String) -> Result<(), Str
             if Command::new("systemctl")
                 .args(["status", "mariadb"])
                 .output()
-                .map(|o| o.status.success() || String::from_utf8_lossy(&o.stdout).contains("mariadb"))
+                .map(|o| {
+                    o.status.success() || String::from_utf8_lossy(&o.stdout).contains("mariadb")
+                })
                 .unwrap_or(false)
             {
                 "mariadb"
@@ -635,7 +651,10 @@ pub fn control_native_service(service: String, action: String) -> Result<(), Str
             if Command::new("systemctl")
                 .args(["status", "redis-server"])
                 .output()
-                .map(|o| o.status.success() || String::from_utf8_lossy(&o.stdout).contains("redis-server"))
+                .map(|o| {
+                    o.status.success()
+                        || String::from_utf8_lossy(&o.stdout).contains("redis-server")
+                })
                 .unwrap_or(false)
             {
                 "redis-server"
@@ -776,11 +795,17 @@ pub struct Database {
 }
 
 #[tauri::command]
-pub fn list_databases(db_type: String, container_id: Option<String>) -> Result<Vec<Database>, String> {
+pub fn list_databases(
+    db_type: String,
+    container_id: Option<String>,
+) -> Result<Vec<Database>, String> {
     match db_type.as_str() {
         "mysql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} mysql -uroot -psecret -e 'SHOW DATABASES;' 2>/dev/null", id)
+                format!(
+                    "docker exec {} mysql -uroot -psecret -e 'SHOW DATABASES;' 2>/dev/null",
+                    id
+                )
             } else {
                 "mysql -uroot -e 'SHOW DATABASES;' 2>/dev/null".to_string()
             };
@@ -793,7 +818,9 @@ pub fn list_databases(db_type: String, container_id: Option<String>) -> Result<V
             let databases: Vec<Database> = String::from_utf8_lossy(&output.stdout)
                 .lines()
                 .skip(1) // Skip header
-                .filter(|name| !["information_schema", "mysql", "performance_schema", "sys"].contains(name))
+                .filter(|name| {
+                    !["information_schema", "mysql", "performance_schema", "sys"].contains(name)
+                })
                 .map(|name| Database {
                     name: name.to_string(),
                     size: None,
@@ -804,7 +831,10 @@ pub fn list_databases(db_type: String, container_id: Option<String>) -> Result<V
         }
         "postgresql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} psql -U postgres -c '\\l' -t 2>/dev/null", id)
+                format!(
+                    "docker exec {} psql -U postgres -c '\\l' -t 2>/dev/null",
+                    id
+                )
             } else {
                 "psql -U postgres -c '\\l' -t 2>/dev/null".to_string()
             };
@@ -836,7 +866,11 @@ pub fn list_databases(db_type: String, container_id: Option<String>) -> Result<V
 }
 
 #[tauri::command]
-pub fn create_database(db_type: String, name: String, container_id: Option<String>) -> Result<(), String> {
+pub fn create_database(
+    db_type: String,
+    name: String,
+    container_id: Option<String>,
+) -> Result<(), String> {
     // Validate database name (alphanumeric and underscore only)
     if !name.chars().all(|c| c.is_alphanumeric() || c == '_') {
         return Err("Database name can only contain letters, numbers, and underscores".to_string());
@@ -845,9 +879,15 @@ pub fn create_database(db_type: String, name: String, container_id: Option<Strin
     match db_type.as_str() {
         "mysql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} mysql -uroot -psecret -e 'CREATE DATABASE IF NOT EXISTS `{}`;'", id, name)
+                format!(
+                    "docker exec {} mysql -uroot -psecret -e 'CREATE DATABASE IF NOT EXISTS `{}`;'",
+                    id, name
+                )
             } else {
-                format!("mysql -uroot -e 'CREATE DATABASE IF NOT EXISTS `{}`;'", name)
+                format!(
+                    "mysql -uroot -e 'CREATE DATABASE IF NOT EXISTS `{}`;'",
+                    name
+                )
             };
 
             let output = Command::new("sh")
@@ -864,7 +904,10 @@ pub fn create_database(db_type: String, name: String, container_id: Option<Strin
         }
         "postgresql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} psql -U postgres -c 'CREATE DATABASE \"{}\";'", id, name)
+                format!(
+                    "docker exec {} psql -U postgres -c 'CREATE DATABASE \"{}\";'",
+                    id, name
+                )
             } else {
                 format!("psql -U postgres -c 'CREATE DATABASE \"{}\";'", name)
             };
@@ -874,7 +917,9 @@ pub fn create_database(db_type: String, name: String, container_id: Option<Strin
                 .output()
                 .map_err(|e| format!("Failed to create database: {}", e))?;
 
-            if !output.status.success() && !String::from_utf8_lossy(&output.stderr).contains("already exists") {
+            if !output.status.success()
+                && !String::from_utf8_lossy(&output.stderr).contains("already exists")
+            {
                 return Err(format!(
                     "Failed to create database: {}",
                     String::from_utf8_lossy(&output.stderr)
@@ -888,9 +933,21 @@ pub fn create_database(db_type: String, name: String, container_id: Option<Strin
 }
 
 #[tauri::command]
-pub fn drop_database(db_type: String, name: String, container_id: Option<String>) -> Result<(), String> {
+pub fn drop_database(
+    db_type: String,
+    name: String,
+    container_id: Option<String>,
+) -> Result<(), String> {
     // Prevent dropping system databases
-    let protected = ["information_schema", "mysql", "performance_schema", "sys", "postgres", "template0", "template1"];
+    let protected = [
+        "information_schema",
+        "mysql",
+        "performance_schema",
+        "sys",
+        "postgres",
+        "template0",
+        "template1",
+    ];
     if protected.contains(&name.as_str()) {
         return Err("Cannot drop system database".to_string());
     }
@@ -898,7 +955,10 @@ pub fn drop_database(db_type: String, name: String, container_id: Option<String>
     match db_type.as_str() {
         "mysql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} mysql -uroot -psecret -e 'DROP DATABASE IF EXISTS `{}`;'", id, name)
+                format!(
+                    "docker exec {} mysql -uroot -psecret -e 'DROP DATABASE IF EXISTS `{}`;'",
+                    id, name
+                )
             } else {
                 format!("mysql -uroot -e 'DROP DATABASE IF EXISTS `{}`;'", name)
             };
@@ -917,9 +977,15 @@ pub fn drop_database(db_type: String, name: String, container_id: Option<String>
         }
         "postgresql" => {
             let cmd = if let Some(id) = container_id {
-                format!("docker exec {} psql -U postgres -c 'DROP DATABASE IF EXISTS \"{}\";'", id, name)
+                format!(
+                    "docker exec {} psql -U postgres -c 'DROP DATABASE IF EXISTS \"{}\";'",
+                    id, name
+                )
             } else {
-                format!("psql -U postgres -c 'DROP DATABASE IF EXISTS \"{}\";'", name)
+                format!(
+                    "psql -U postgres -c 'DROP DATABASE IF EXISTS \"{}\";'",
+                    name
+                )
             };
 
             let output = Command::new("sh")

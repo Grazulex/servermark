@@ -31,17 +31,20 @@ struct ComposerPackage {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistResponse {
     packages: Option<PackagistPackages>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistPackages {
     #[serde(rename = "laravel/framework")]
     laravel_framework: Option<Vec<PackagistVersion>>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistVersion {
     version: String,
 }
@@ -117,10 +120,7 @@ pub fn detect_laravel_version(project_path: String) -> Result<LaravelInfo, Strin
 pub fn get_latest_laravel_version() -> Result<String, String> {
     // Use curl to fetch from Packagist API
     let output = Command::new("curl")
-        .args([
-            "-s",
-            "https://repo.packagist.org/p2/laravel/framework.json",
-        ])
+        .args(["-s", "https://repo.packagist.org/p2/laravel/framework.json"])
         .output()
         .map_err(|e| format!("Failed to fetch from Packagist: {}", e))?;
 
@@ -156,7 +156,10 @@ pub fn get_latest_laravel_version() -> Result<String, String> {
 
 /// Upgrade Laravel in a project
 #[tauri::command]
-pub fn upgrade_laravel(project_path: String, target_version: Option<String>) -> Result<String, String> {
+pub fn upgrade_laravel(
+    project_path: String,
+    target_version: Option<String>,
+) -> Result<String, String> {
     let path = Path::new(&project_path);
 
     // Build the composer command
@@ -203,7 +206,10 @@ pub fn create_laravel_project(
         .map_err(|e| format!("Failed to create Laravel project: {}", e))?;
 
     if output.status.success() {
-        Ok(format!("Laravel project '{}' created successfully", project_name))
+        Ok(format!(
+            "Laravel project '{}' created successfully",
+            project_name
+        ))
     } else {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
     }
@@ -232,9 +238,7 @@ pub fn get_scheduler_status(site_path: String) -> Result<bool, String> {
     let identifier = get_cron_identifier(&site_path);
 
     // Get current crontab
-    let output = Command::new("crontab")
-        .arg("-l")
-        .output();
+    let output = Command::new("crontab").arg("-l").output();
 
     match output {
         Ok(out) => {
@@ -291,7 +295,12 @@ pub fn enable_scheduler(site_path: String, php_version: String) -> Result<(), St
     let new_crontab = if current_crontab.is_empty() {
         format!("{}\n{}\n", identifier, cron_job)
     } else {
-        format!("{}\n{}\n{}\n", current_crontab.trim_end(), identifier, cron_job)
+        format!(
+            "{}\n{}\n{}\n",
+            current_crontab.trim_end(),
+            identifier,
+            cron_job
+        )
     };
 
     // Write new crontab
@@ -307,7 +316,9 @@ pub fn enable_scheduler(site_path: String, php_version: String) -> Result<(), St
             .map_err(|e| format!("Failed to write crontab: {}", e))?;
     }
 
-    let status = child.wait().map_err(|e| format!("Failed to wait for crontab: {}", e))?;
+    let status = child
+        .wait()
+        .map_err(|e| format!("Failed to wait for crontab: {}", e))?;
 
     if status.success() {
         Ok(())
@@ -319,7 +330,7 @@ pub fn enable_scheduler(site_path: String, php_version: String) -> Result<(), St
 /// Disable the Laravel scheduler for a site
 #[tauri::command]
 pub fn disable_scheduler(site_path: String) -> Result<(), String> {
-    let identifier = get_cron_identifier(&site_path);
+    let _identifier = get_cron_identifier(&site_path);
 
     // Get current crontab
     let output = Command::new("crontab")
@@ -365,7 +376,9 @@ pub fn disable_scheduler(site_path: String) -> Result<(), String> {
                 .map_err(|e| format!("Failed to write crontab: {}", e))?;
         }
 
-        let status = child.wait().map_err(|e| format!("Failed to wait for crontab: {}", e))?;
+        let status = child
+            .wait()
+            .map_err(|e| format!("Failed to wait for crontab: {}", e))?;
 
         if !status.success() {
             return Err("Failed to update crontab".to_string());
@@ -381,10 +394,7 @@ pub fn disable_scheduler(site_path: String) -> Result<(), String> {
 
 /// Generate a slug from site path for service naming
 fn get_site_slug(site_path: &str) -> String {
-    site_path
-        .trim_start_matches('/')
-        .replace('/', "-")
-        .replace('.', "-")
+    site_path.trim_start_matches('/').replace(['/', '.'], "-")
 }
 
 /// Get the systemd user service name for a site
@@ -443,7 +453,11 @@ pub fn get_queue_status(site_path: String) -> Result<bool, String> {
 
 /// Start the Laravel queue worker for a site
 #[tauri::command]
-pub fn start_queue_worker(site_path: String, php_version: String, site_name: String) -> Result<(), String> {
+pub fn start_queue_worker(
+    site_path: String,
+    php_version: String,
+    site_name: String,
+) -> Result<(), String> {
     let path = Path::new(&site_path);
 
     // Verify it's a Laravel project
@@ -539,7 +553,10 @@ pub fn get_scheduler_logs(site_path: String, lines: Option<u32>) -> Result<Strin
     let log_path = Path::new(&site_path).join("storage/logs/scheduler.log");
 
     if !log_path.exists() {
-        return Ok("No scheduler logs yet. The scheduler will create logs after its first run.".to_string());
+        return Ok(
+            "No scheduler logs yet. The scheduler will create logs after its first run."
+                .to_string(),
+        );
     }
 
     let lines = lines.unwrap_or(100);
@@ -599,8 +616,7 @@ pub fn clear_scheduler_logs(site_path: String) -> Result<(), String> {
     let log_path = Path::new(&site_path).join("storage/logs/scheduler.log");
 
     if log_path.exists() {
-        fs::write(&log_path, "")
-            .map_err(|e| format!("Failed to clear scheduler logs: {}", e))?;
+        fs::write(&log_path, "").map_err(|e| format!("Failed to clear scheduler logs: {}", e))?;
     }
 
     Ok(())

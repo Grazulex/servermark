@@ -45,7 +45,10 @@ pub struct VolumeMapping {
 #[tauri::command]
 pub fn detect_container_runtime() -> Result<RuntimeInfo, String> {
     // Try Docker first
-    if let Ok(output) = Command::new("docker").args(["version", "--format", "{{.Server.Version}}"]).output() {
+    if let Ok(output) = Command::new("docker")
+        .args(["version", "--format", "{{.Server.Version}}"])
+        .output()
+    {
         if output.status.success() {
             let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
@@ -66,7 +69,10 @@ pub fn detect_container_runtime() -> Result<RuntimeInfo, String> {
     }
 
     // Try Podman
-    if let Ok(output) = Command::new("podman").args(["version", "--format", "{{.Version}}"]).output() {
+    if let Ok(output) = Command::new("podman")
+        .args(["version", "--format", "{{.Version}}"])
+        .output()
+    {
         if output.status.success() {
             let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
@@ -90,12 +96,22 @@ pub fn detect_container_runtime() -> Result<RuntimeInfo, String> {
 /// Get the container runtime command (docker or podman)
 fn get_runtime_cmd() -> Result<String, String> {
     // Check Docker first
-    if Command::new("docker").arg("--version").output().map(|o| o.status.success()).unwrap_or(false) {
+    if Command::new("docker")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+    {
         return Ok("docker".to_string());
     }
 
     // Check Podman
-    if Command::new("podman").arg("--version").output().map(|o| o.status.success()).unwrap_or(false) {
+    if Command::new("podman")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+    {
         return Ok("podman".to_string());
     }
 
@@ -109,9 +125,12 @@ pub fn list_containers() -> Result<Vec<Container>, String> {
 
     let output = Command::new(&runtime)
         .args([
-            "ps", "-a",
-            "--filter", "name=servermark-",
-            "--format", "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}|{{.CreatedAt}}"
+            "ps",
+            "-a",
+            "--filter",
+            "name=servermark-",
+            "--format",
+            "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}|{{.CreatedAt}}",
         ])
         .output()
         .map_err(|e| format!("Failed to list containers: {}", e))?;
@@ -217,7 +236,10 @@ pub fn create_container(params: CreateContainerParams) -> Result<String, String>
     // Add port mappings
     for port in &params.ports {
         args.push("-p".to_string());
-        args.push(format!("{}:{}/{}", port.host, port.container, port.protocol));
+        args.push(format!(
+            "{}:{}/{}",
+            port.host, port.container, port.protocol
+        ));
     }
 
     // Add environment variables

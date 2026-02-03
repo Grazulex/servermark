@@ -25,8 +25,10 @@ pub fn run() {
             // Create tray menu items
             let open_i = MenuItem::with_id(app, "open", "Open ServerMark", true, None::<&str>)?;
             let separator1 = MenuItem::with_id(app, "sep1", "─────────────", false, None::<&str>)?;
-            let start_all_i = MenuItem::with_id(app, "start_all", "Start All Containers", true, None::<&str>)?;
-            let stop_all_i = MenuItem::with_id(app, "stop_all", "Stop All Containers", true, None::<&str>)?;
+            let start_all_i =
+                MenuItem::with_id(app, "start_all", "Start All Containers", true, None::<&str>)?;
+            let stop_all_i =
+                MenuItem::with_id(app, "stop_all", "Stop All Containers", true, None::<&str>)?;
             let separator2 = MenuItem::with_id(app, "sep2", "─────────────", false, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 

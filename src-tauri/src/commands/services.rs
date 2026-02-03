@@ -20,7 +20,8 @@ pub fn get_service_status(service_name: String) -> Result<ServiceStatus, String>
         "running"
     } else {
         "stopped"
-    }.to_string();
+    }
+    .to_string();
 
     // Try to get PID if running
     let pid = if status == "running" {
