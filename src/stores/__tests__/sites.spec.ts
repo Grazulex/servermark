@@ -74,7 +74,7 @@ describe('Sites Store', () => {
     ]
 
     expect(store.activeSites).toHaveLength(1)
-    expect(store.activeSites[0].name).toBe('secured')
+    expect(store.activeSites[0]?.name).toBe('secured')
   })
 
   it('should have default config values', () => {
