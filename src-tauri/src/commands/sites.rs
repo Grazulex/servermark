@@ -120,7 +120,11 @@ pub fn list_sites() -> Result<Vec<Site>, String> {
 
 /// Add a new site
 #[tauri::command]
-pub fn add_site(path: String, name: Option<String>, php_version: Option<String>) -> Result<Site, String> {
+pub fn add_site(
+    path: String,
+    name: Option<String>,
+    php_version: Option<String>,
+) -> Result<Site, String> {
     let site_path = Path::new(&path);
 
     if !site_path.exists() {
@@ -138,7 +142,11 @@ pub fn add_site(path: String, name: Option<String>, php_version: Option<String>)
     });
 
     // Check if site already exists
-    if config.sites.iter().any(|s| s.path == path || s.name == site_name) {
+    if config
+        .sites
+        .iter()
+        .any(|s| s.path == path || s.name == site_name)
+    {
         return Err("Site already exists".to_string());
     }
 
@@ -159,7 +167,11 @@ pub fn add_site(path: String, name: Option<String>, php_version: Option<String>)
         id: format!("site-{}", chrono::Utc::now().timestamp_millis()),
         name: site_name.clone(),
         path: path.clone(),
-        domain: format!("{}.{}", site_name.to_lowercase().replace(' ', "-"), config.tld),
+        domain: format!(
+            "{}.{}",
+            site_name.to_lowercase().replace(' ', "-"),
+            config.tld
+        ),
         php_version: php,
         secured: false,
         site_type,
@@ -193,8 +205,8 @@ fn update_laravel_env(site: &Site) -> Result<(), String> {
         return Ok(()); // No .env file
     }
 
-    let content = fs::read_to_string(&env_path)
-        .map_err(|e| format!("Failed to read .env: {}", e))?;
+    let content =
+        fs::read_to_string(&env_path).map_err(|e| format!("Failed to read .env: {}", e))?;
 
     let protocol = if site.secured { "https" } else { "http" };
     let new_app_url = format!("APP_URL={}://{}", protocol, site.domain);
@@ -203,7 +215,8 @@ fn update_laravel_env(site: &Site) -> Result<(), String> {
     let new_content = if content.contains("APP_URL=") {
         // Replace existing APP_URL
         let lines: Vec<&str> = content.lines().collect();
-        let updated_lines: Vec<String> = lines.iter()
+        let updated_lines: Vec<String> = lines
+            .iter()
             .map(|line| {
                 if line.starts_with("APP_URL=") {
                     new_app_url.clone()
@@ -222,8 +235,7 @@ fn update_laravel_env(site: &Site) -> Result<(), String> {
         }
     };
 
-    fs::write(&env_path, new_content)
-        .map_err(|e| format!("Failed to write .env: {}", e))?;
+    fs::write(&env_path, new_content).map_err(|e| format!("Failed to write .env: {}", e))?;
 
     Ok(())
 }
@@ -358,7 +370,10 @@ pub fn get_sites_config() -> SitesConfig {
 /// Update sites configuration
 #[tauri::command]
 #[allow(non_snake_case)]
-pub fn update_sites_config(tld: Option<String>, sitesPath: Option<String>) -> Result<SitesConfig, String> {
+pub fn update_sites_config(
+    tld: Option<String>,
+    sitesPath: Option<String>,
+) -> Result<SitesConfig, String> {
     let mut config = load_sites_config();
 
     if let Some(tld) = tld {
@@ -476,7 +491,10 @@ pub fn create_project(
     let project_path = Path::new(&base_path).join(&name);
 
     if project_path.exists() {
-        return Err(format!("Directory {} already exists", project_path.display()));
+        return Err(format!(
+            "Directory {} already exists",
+            project_path.display()
+        ));
     }
 
     // Create parent directory if needed
@@ -555,7 +573,10 @@ pub fn create_project(
                         .output();
                     let _ = fs::remove_file(project_path.join("wordpress.tar.gz"));
                 } else {
-                    return Err("Failed to download WordPress. Install wp-cli or check your connection.".to_string());
+                    return Err(
+                        "Failed to download WordPress. Install wp-cli or check your connection."
+                            .to_string(),
+                    );
                 }
             }
         }
@@ -619,7 +640,10 @@ pub fn clone_repository(
     let project_path = Path::new(&config.sites_path).join(&project_name);
 
     if project_path.exists() {
-        return Err(format!("Directory {} already exists", project_path.display()));
+        return Err(format!(
+            "Directory {} already exists",
+            project_path.display()
+        ));
     }
 
     // Create parent directory if needed

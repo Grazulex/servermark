@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use super::sites::{Site, SiteType, load_sites_config};
+use super::sites::{load_sites_config, Site, SiteType};
 
 /// Common Docker hostnames that should resolve to localhost
 #[allow(dead_code)]
@@ -25,7 +25,7 @@ const DOCKER_HOSTNAMES: &[&str] = &[
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebServerConfig {
-    pub active: String,  // "caddy" or "nginx"
+    pub active: String, // "caddy" or "nginx"
     pub caddy_installed: bool,
     pub nginx_installed: bool,
 }
@@ -112,11 +112,14 @@ fn generate_nginx_site_config(site: &Site) -> String {
     let php_socket = format!("/var/run/php/php{}-fpm.sock", site.php_version);
 
     let ssl_config = if site.secured {
-        format!(r#"
+        format!(
+            r#"
     listen 443 ssl;
     ssl_certificate /etc/servermark/ssl/{domain}.crt;
     ssl_certificate_key /etc/servermark/ssl/{domain}.key;
-"#, domain = site.domain)
+"#,
+            domain = site.domain
+        )
     } else {
         "    listen 80;".to_string()
     };
@@ -159,8 +162,8 @@ pub fn fix_docker_hostnames_in_env(site_path: &str) -> Result<(), String> {
         return Ok(()); // No .env file to fix
     }
 
-    let content = fs::read_to_string(&env_path)
-        .map_err(|e| format!("Failed to read .env: {}", e))?;
+    let content =
+        fs::read_to_string(&env_path).map_err(|e| format!("Failed to read .env: {}", e))?;
 
     let mut modified = content.clone();
     let mut changes_made = false;
@@ -177,7 +180,10 @@ pub fn fix_docker_hostnames_in_env(site_path: &str) -> Result<(), String> {
         ("MAIL_HOST=mailhog", "MAIL_HOST=127.0.0.1"),
         ("MAIL_HOST=mailpit", "MAIL_HOST=127.0.0.1"),
         ("MEILISEARCH_HOST=meilisearch", "MEILISEARCH_HOST=127.0.0.1"),
-        ("ELASTICSEARCH_HOST=elasticsearch", "ELASTICSEARCH_HOST=127.0.0.1"),
+        (
+            "ELASTICSEARCH_HOST=elasticsearch",
+            "ELASTICSEARCH_HOST=127.0.0.1",
+        ),
         ("MONGODB_HOST=mongo", "MONGODB_HOST=127.0.0.1"),
         ("MONGODB_HOST=mongodb", "MONGODB_HOST=127.0.0.1"),
     ];
@@ -190,8 +196,7 @@ pub fn fix_docker_hostnames_in_env(site_path: &str) -> Result<(), String> {
     }
 
     if changes_made {
-        fs::write(&env_path, &modified)
-            .map_err(|e| format!("Failed to write .env: {}", e))?;
+        fs::write(&env_path, &modified).map_err(|e| format!("Failed to write .env: {}", e))?;
     }
 
     Ok(())
@@ -294,7 +299,9 @@ fi
                                 domain = site.domain
                             ));
                         }
-                        script.push_str("nginx -t && systemctl reload nginx || systemctl restart nginx\n");
+                        script.push_str(
+                            "nginx -t && systemctl reload nginx || systemctl restart nginx\n",
+                        );
                     }
 
                     // Add hosts entry
@@ -308,10 +315,7 @@ fi
         "remove_site" => {
             if let Some(name) = site_name {
                 // Remove from both servers to be safe
-                script.push_str(&format!(
-                    "rm -f '/etc/caddy/sites.d/{}.conf'\n",
-                    name
-                ));
+                script.push_str(&format!("rm -f '/etc/caddy/sites.d/{}.conf'\n", name));
                 script.push_str(&format!(
                     "rm -f '/etc/nginx/sites-available/servermark-{}'\n",
                     name
@@ -330,23 +334,22 @@ fi
 
                 // Remove from hosts (find domain from sites list)
                 if let Some(site) = sites.iter().find(|s| s.name == name) {
-                    script.push_str(&format!(
-                        "sed -i '/{}/d' /etc/hosts\n",
-                        site.domain
-                    ));
+                    script.push_str(&format!("sed -i '/{}/d' /etc/hosts\n", site.domain));
                 }
             }
         }
         "switch_server" => {
             if active_server == "caddy" {
-                script.push_str(r#"
+                script.push_str(
+                    r#"
 # Switch to Caddy
 systemctl stop nginx 2>/dev/null || true
 systemctl disable nginx 2>/dev/null || true
 
 # Regenerate all Caddy configs
 rm -f /etc/caddy/sites.d/*.conf
-"#);
+"#,
+                );
                 for site in sites {
                     let config = generate_caddy_site_config(site);
                     script.push_str(&format!(
@@ -354,12 +357,15 @@ rm -f /etc/caddy/sites.d/*.conf
                         site.name, config
                     ));
                 }
-                script.push_str(r#"
+                script.push_str(
+                    r#"
 systemctl enable caddy
 systemctl start caddy
-"#);
+"#,
+                );
             } else {
-                script.push_str(r#"
+                script.push_str(
+                    r#"
 # Switch to Nginx
 systemctl stop caddy 2>/dev/null || true
 systemctl disable caddy 2>/dev/null || true
@@ -367,7 +373,8 @@ systemctl disable caddy 2>/dev/null || true
 # Regenerate all Nginx configs
 rm -f /etc/nginx/sites-enabled/servermark-*
 rm -f /etc/nginx/sites-available/servermark-*
-"#);
+"#,
+                );
                 for site in sites {
                     let config = generate_nginx_site_config(site);
                     let filename = format!("servermark-{}", site.name);
@@ -389,10 +396,12 @@ fi
                         ));
                     }
                 }
-                script.push_str(r#"
+                script.push_str(
+                    r#"
 systemctl enable nginx
 nginx -t && systemctl start nginx
-"#);
+"#,
+                );
             }
         }
         _ => {}
@@ -402,19 +411,12 @@ nginx -t && systemctl start nginx
 }
 
 /// Execute a web server operation with a single pkexec call
-pub fn execute_webserver_operation(
-    operation: &str,
-    site_name: Option<&str>,
-) -> Result<(), String> {
+pub fn execute_webserver_operation(operation: &str, site_name: Option<&str>) -> Result<(), String> {
     let sites_config = load_sites_config();
     let ws_config = load_webserver_config();
 
-    let script = build_webserver_script(
-        operation,
-        &sites_config.sites,
-        &ws_config.active,
-        site_name,
-    );
+    let script =
+        build_webserver_script(operation, &sites_config.sites, &ws_config.active, site_name);
 
     let output = Command::new("pkexec")
         .args(["bash", "-c", &script])
@@ -445,12 +447,7 @@ pub fn switch_active_webserver(server: String) -> Result<(), String> {
     save_webserver_config(&config)?;
 
     let sites_config = load_sites_config();
-    let script = build_webserver_script(
-        "switch_server",
-        &sites_config.sites,
-        &server,
-        None,
-    );
+    let script = build_webserver_script("switch_server", &sites_config.sites, &server, None);
 
     let output = Command::new("pkexec")
         .args(["bash", "-c", &script])

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,8 +80,12 @@ pub fn get_php_versions() -> Result<Vec<PhpVersion>, String> {
                 let version_part = &filename[3..];
 
                 // Check if it looks like a version (e.g., "8.3" or "7.4")
-                if version_part.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false)
-                   && !found_versions.contains(&version_part.to_string())
+                if version_part
+                    .chars()
+                    .next()
+                    .map(|c| c.is_ascii_digit())
+                    .unwrap_or(false)
+                    && !found_versions.contains(&version_part.to_string())
                 {
                     let php_path = format!("/usr/bin/{}", filename);
                     let full_version = get_php_full_version(&php_path);
@@ -115,8 +119,16 @@ pub fn get_php_versions() -> Result<Vec<PhpVersion>, String> {
 
     // Sort by version (descending)
     result.sort_by(|a, b| {
-        let a_parts: Vec<u32> = a.version.split('.').filter_map(|s| s.parse().ok()).collect();
-        let b_parts: Vec<u32> = b.version.split('.').filter_map(|s| s.parse().ok()).collect();
+        let a_parts: Vec<u32> = a
+            .version
+            .split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        let b_parts: Vec<u32> = b
+            .version
+            .split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect();
         b_parts.cmp(&a_parts)
     });
 
@@ -161,9 +173,10 @@ fn get_php_full_version(php_path: &str) -> Option<String> {
                 return None;
             }
             let output = String::from_utf8_lossy(&o.stdout);
-            output.lines().next().and_then(|line| {
-                line.split_whitespace().nth(1).map(|v| v.to_string())
-            })
+            output
+                .lines()
+                .next()
+                .and_then(|line| line.split_whitespace().nth(1).map(|v| v.to_string()))
         })
 }
 
@@ -211,36 +224,41 @@ pub fn install_php_version(version: String, package_manager: String) -> Result<S
     let (cmd, args) = match package_manager.as_str() {
         "apt" => {
             // For Ubuntu/Debian, we need the ondrej/php PPA
-            ("pkexec", vec![
-                "apt-get".to_string(),
-                "install".to_string(),
-                "-y".to_string(),
-                format!("php{}", version),
-                format!("php{}-cli", version),
-                format!("php{}-fpm", version),
-                format!("php{}-common", version),
-                format!("php{}-mysql", version),
-                format!("php{}-xml", version),
-                format!("php{}-curl", version),
-                format!("php{}-mbstring", version),
-            ])
+            (
+                "pkexec",
+                vec![
+                    "apt-get".to_string(),
+                    "install".to_string(),
+                    "-y".to_string(),
+                    format!("php{}", version),
+                    format!("php{}-cli", version),
+                    format!("php{}-fpm", version),
+                    format!("php{}-common", version),
+                    format!("php{}-mysql", version),
+                    format!("php{}-xml", version),
+                    format!("php{}-curl", version),
+                    format!("php{}-mbstring", version),
+                ],
+            )
         }
-        "dnf" => {
-            ("pkexec", vec![
+        "dnf" => (
+            "pkexec",
+            vec![
                 "dnf".to_string(),
                 "install".to_string(),
                 "-y".to_string(),
                 format!("php{}", version.replace(".", "")),
-            ])
-        }
-        "pacman" => {
-            ("pkexec", vec![
+            ],
+        ),
+        "pacman" => (
+            "pkexec",
+            vec![
                 "pacman".to_string(),
                 "-S".to_string(),
                 "--noconfirm".to_string(),
                 "php".to_string(),
-            ])
-        }
+            ],
+        ),
         _ => return Err(format!("Unsupported package manager: {}", package_manager)),
     };
 
@@ -298,12 +316,15 @@ pub fn check_php_ppa() -> PpaStatus {
 #[tauri::command]
 pub fn add_php_ppa(app: AppHandle) -> Result<String, String> {
     let emit_progress = |step: &str, current: u8, total: u8, status: &str| {
-        let _ = app.emit("ppa-progress", InstallProgress {
-            step: step.to_string(),
-            current_step: current,
-            total_steps: total,
-            status: status.to_string(),
-        });
+        let _ = app.emit(
+            "ppa-progress",
+            InstallProgress {
+                step: step.to_string(),
+                current_step: current,
+                total_steps: total,
+                status: status.to_string(),
+            },
+        );
     };
 
     // Step 1: Install prerequisites
@@ -509,18 +530,26 @@ pub fn install_php_with_extensions(
 
     let emit_progress = |step: &str, current: u8, total: u8, status: &str| {
         log::info!("Emitting progress: {} ({}/{})", step, current, total);
-        let result = app.emit("php-install-progress", InstallProgress {
-            step: step.to_string(),
-            current_step: current,
-            total_steps: total,
-            status: status.to_string(),
-        });
+        let result = app.emit(
+            "php-install-progress",
+            InstallProgress {
+                step: step.to_string(),
+                current_step: current,
+                total_steps: total,
+                status: status.to_string(),
+            },
+        );
         if let Err(e) = result {
             log::error!("Failed to emit progress event: {}", e);
         }
     };
 
-    emit_progress(&format!("Preparing PHP {} installation...", version), 1, 3, "running");
+    emit_progress(
+        &format!("Preparing PHP {} installation...", version),
+        1,
+        3,
+        "running",
+    );
 
     let packages: Vec<String> = match package_manager.as_str() {
         "apt" => {
@@ -557,12 +586,16 @@ pub fn install_php_with_extensions(
         &format!("Installing {} packages...", package_count),
         2,
         3,
-        "running"
+        "running",
     );
 
     let (cmd, args) = match package_manager.as_str() {
         "apt" => {
-            let mut a = vec!["apt-get".to_string(), "install".to_string(), "-y".to_string()];
+            let mut a = vec![
+                "apt-get".to_string(),
+                "install".to_string(),
+                "-y".to_string(),
+            ];
             a.extend(packages);
             ("pkexec", a)
         }
@@ -572,7 +605,11 @@ pub fn install_php_with_extensions(
             ("pkexec", a)
         }
         "pacman" => {
-            let mut a = vec!["pacman".to_string(), "-S".to_string(), "--noconfirm".to_string()];
+            let mut a = vec![
+                "pacman".to_string(),
+                "-S".to_string(),
+                "--noconfirm".to_string(),
+            ];
             a.extend(packages);
             ("pkexec", a)
         }
@@ -582,20 +619,17 @@ pub fn install_php_with_extensions(
         }
     };
 
-    let output = Command::new(cmd)
-        .args(&args)
-        .output()
-        .map_err(|e| {
-            emit_progress("Installation failed", 2, 3, "error");
-            format!("Failed to install PHP: {}", e)
-        })?;
+    let output = Command::new(cmd).args(&args).output().map_err(|e| {
+        emit_progress("Installation failed", 2, 3, "error");
+        format!("Failed to install PHP: {}", e)
+    })?;
 
     if output.status.success() {
         emit_progress(
             &format!("PHP {} installed successfully!", version),
             3,
             3,
-            "complete"
+            "complete",
         );
         Ok(format!(
             "PHP {} installed successfully with extensions: {}",
@@ -616,63 +650,68 @@ pub fn uninstall_php_version(
     package_manager: String,
 ) -> Result<String, String> {
     let emit_progress = |step: &str, current: u8, total: u8, status: &str| {
-        let _ = app.emit("php-uninstall-progress", InstallProgress {
-            step: step.to_string(),
-            current_step: current,
-            total_steps: total,
-            status: status.to_string(),
-        });
+        let _ = app.emit(
+            "php-uninstall-progress",
+            InstallProgress {
+                step: step.to_string(),
+                current_step: current,
+                total_steps: total,
+                status: status.to_string(),
+            },
+        );
     };
 
     emit_progress(&format!("Removing PHP {}...", version), 1, 2, "running");
 
     let (cmd, args) = match package_manager.as_str() {
-        "apt" => {
-            ("pkexec", vec![
+        "apt" => (
+            "pkexec",
+            vec![
                 "apt-get".to_string(),
                 "remove".to_string(),
                 "--purge".to_string(),
                 "-y".to_string(),
                 format!("php{}*", version),
-            ])
-        }
+            ],
+        ),
         "dnf" => {
             let ver = version.replace(".", "");
-            ("pkexec", vec![
-                "dnf".to_string(),
-                "remove".to_string(),
-                "-y".to_string(),
-                format!("php{}*", ver),
-            ])
+            (
+                "pkexec",
+                vec![
+                    "dnf".to_string(),
+                    "remove".to_string(),
+                    "-y".to_string(),
+                    format!("php{}*", ver),
+                ],
+            )
         }
-        "pacman" => {
-            ("pkexec", vec![
+        "pacman" => (
+            "pkexec",
+            vec![
                 "pacman".to_string(),
                 "-Rns".to_string(),
                 "--noconfirm".to_string(),
                 "php".to_string(),
-            ])
-        }
+            ],
+        ),
         _ => {
             emit_progress("Unsupported package manager", 1, 2, "error");
             return Err(format!("Unsupported package manager: {}", package_manager));
         }
     };
 
-    let output = Command::new(cmd)
-        .args(&args)
-        .output()
-        .map_err(|e| {
-            emit_progress("Uninstall failed", 1, 2, "error");
-            format!("Failed to uninstall PHP: {}", e)
-        })?;
+    let output = Command::new(cmd).args(&args).output().map_err(|e| {
+        emit_progress("Uninstall failed", 1, 2, "error");
+        format!("Failed to uninstall PHP: {}", e)
+    })?;
 
     if output.status.success() {
         emit_progress(
             &format!("PHP {} removed successfully!", version),
             2,
             2,
-            "complete"
+            "complete",
         );
         Ok(format!("PHP {} uninstalled successfully", version))
     } else {
