@@ -6,6 +6,7 @@ use std::process::Command;
 use super::sites::{Site, SiteType, load_sites_config};
 
 /// Common Docker hostnames that should resolve to localhost
+#[allow(dead_code)]
 const DOCKER_HOSTNAMES: &[&str] = &[
     "mysql",
     "mariadb",

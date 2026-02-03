@@ -9,11 +9,27 @@ export default [
   ...pluginVue.configs['flat/recommended'],
   eslintConfigPrettier,
   {
-    files: ['**/*.vue'],
+    files: ['**/*.vue', '**/*.ts'],
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser,
       },
+      globals: {
+        console: 'readonly',
+        navigator: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+      },
+    },
+    rules: {
+      'vue/multi-word-component-names': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {

@@ -153,7 +153,7 @@ pub fn add_site(path: String, name: Option<String>, php_version: Option<String>)
     };
 
     // Get active PHP version if not specified
-    let php = php_version.unwrap_or_else(|| get_active_php_version());
+    let php = php_version.unwrap_or_else(get_active_php_version);
 
     let site = Site {
         id: format!("site-{}", chrono::Utc::now().timestamp_millis()),
@@ -609,8 +609,8 @@ pub fn clone_repository(
     let project_name = name.unwrap_or_else(|| {
         repo_url
             .trim_end_matches('/')
-            .split('/')
-            .last()
+            .rsplit('/')
+            .next()
             .unwrap_or("project")
             .trim_end_matches(".git")
             .to_string()

@@ -31,17 +31,20 @@ struct ComposerPackage {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistResponse {
     packages: Option<PackagistPackages>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistPackages {
     #[serde(rename = "laravel/framework")]
     laravel_framework: Option<Vec<PackagistVersion>>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackagistVersion {
     version: String,
 }
@@ -319,7 +322,7 @@ pub fn enable_scheduler(site_path: String, php_version: String) -> Result<(), St
 /// Disable the Laravel scheduler for a site
 #[tauri::command]
 pub fn disable_scheduler(site_path: String) -> Result<(), String> {
-    let identifier = get_cron_identifier(&site_path);
+    let _identifier = get_cron_identifier(&site_path);
 
     // Get current crontab
     let output = Command::new("crontab")
@@ -383,8 +386,7 @@ pub fn disable_scheduler(site_path: String) -> Result<(), String> {
 fn get_site_slug(site_path: &str) -> String {
     site_path
         .trim_start_matches('/')
-        .replace('/', "-")
-        .replace('.', "-")
+        .replace(['/', '.'], "-")
 }
 
 /// Get the systemd user service name for a site
