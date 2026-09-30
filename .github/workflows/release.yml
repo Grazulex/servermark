@@ -64,6 +64,9 @@ jobs:
           ICON=$(basename "$(readlink squashfs-root/.DirIcon)")
           test -f "squashfs-root/$ICON"
           ln -sfn "$ICON" squashfs-root/.DirIcon
+          # The extracted tree has 700 directories; make it readable and
+          # traversable by other users (the catalog test runs under firejail).
+          chmod -R a+rX,go-w squashfs-root
           wget -q -O appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool squashfs-root "$APPIMAGE"
