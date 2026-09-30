@@ -48,3 +48,23 @@ jobs:
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           releaseDraft: false
           prerelease: false
+
+      # Tauri/linuxdeploy writes .DirIcon as an absolute symlink to the build
+      # runner's filesystem, which is dangling once the AppImage is downloaded
+      # (the AppImage catalog test rejects it). Repoint it to a relative link.
+      - name: Fix .DirIcon symlink in AppImage
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: src-tauri/target/release/bundle/appimage
+        run: |
+          set -euo pipefail
+          APPIMAGE=$(ls ./*.AppImage | head -n 1)
+          chmod +x "$APPIMAGE"
+          "$APPIMAGE" --appimage-extract >/dev/null
+          ICON=$(basename "$(readlink squashfs-root/.DirIcon)")
+          test -f "squashfs-root/$ICON"
+          ln -sfn "$ICON" squashfs-root/.DirIcon
+          wget -q -O appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool squashfs-root "$APPIMAGE"
+          gh release upload "${{ github.ref_name }}" "$APPIMAGE" --clobber --repo "${{ github.repository }}"
