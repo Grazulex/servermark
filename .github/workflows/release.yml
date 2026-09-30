@@ -69,5 +69,9 @@ jobs:
           chmod -R a+rX,go-w squashfs-root
           wget -q -O appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
-          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool squashfs-root "$APPIMAGE"
-          gh release upload "${{ github.ref_name }}" "$APPIMAGE" --clobber --repo "${{ github.repository }}"
+          sudo apt-get install -y zsync
+          # Embed update info and generate the .zsync file (AppImageUpdate)
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool \
+            -u "gh-releases-zsync|${{ github.repository_owner }}|servermark|latest|ServerMark_*_amd64.AppImage.zsync" \
+            squashfs-root "$APPIMAGE"
+          gh release upload "${{ github.ref_name }}" "$APPIMAGE" "$APPIMAGE.zsync" --clobber --repo "${{ github.repository }}"
