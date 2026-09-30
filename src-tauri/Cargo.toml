@@ -1,6 +1,6 @@
 [package]
 name = "servermark"
-version = "0.2.3"
+version = "0.2.4"
 description = "Local development environment manager for Linux"
 authors = ["Grazulex"]
 license = "MIT"
