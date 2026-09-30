@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#42b883"/>
+      <stop offset="1" stop-color="#1f6f5c"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- server racks -->
+  <g fill="#0f2e2a" fill-opacity="0.85">
+    <rect x="232" y="252" width="560" height="152" rx="36"/>
+    <rect x="232" y="436" width="560" height="152" rx="36"/>
+    <rect x="232" y="620" width="560" height="152" rx="36"/>
+  </g>
+  <!-- status LEDs -->
+  <g fill="#7CFFB2">
+    <circle cx="308" cy="328" r="22"/>
+    <circle cx="308" cy="512" r="22"/>
+    <circle cx="308" cy="696" r="22"/>
+  </g>
+  <!-- vents -->
+  <g stroke="#42b883" stroke-width="16" stroke-linecap="round" stroke-opacity="0.7">
+    <line x1="400" y1="328" x2="720" y2="328"/>
+    <line x1="400" y1="512" x2="720" y2="512"/>
+    <line x1="400" y1="696" x2="720" y2="696"/>
+  </g>
+  <!-- terminal prompt badge -->
+  <g transform="translate(640 700)">
+    <circle cx="120" cy="120" r="128" fill="#ffffff"/>
+    <path d="M70 70 L130 120 L70 170" fill="none" stroke="#1f6f5c" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="150" y1="172" x2="200" y2="172" stroke="#1f6f5c" stroke-width="26" stroke-linecap="round"/>
+  </g>
+</svg>
